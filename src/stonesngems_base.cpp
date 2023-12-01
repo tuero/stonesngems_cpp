@@ -231,8 +231,8 @@ auto RNDGameState::get_observation(const std::vector<VisibleCellType> &filter_el
 #include "assets_all.inc"
 
 auto RNDGameState::image_shape() const noexcept -> std::array<std::size_t, 3> {
-    const auto rows = board.rows + 4;
-    const auto cols = board.cols + 4;
+    const auto rows = board.rows;
+    const auto cols = board.cols;
     return {rows * SPRITE_HEIGHT, cols * SPRITE_WIDTH, SPRITE_CHANNELS};
 }
 
