@@ -58,7 +58,7 @@ const std::string DEFAULT_GAME_BOARD_STR =
     "19|19|19|19|19|19|19|19|19|19|19";
 constexpr bool DEFAULT_GRAVITY = true;
 constexpr int DEFAULT_BLOB_SWAP = -1;
-constexpr int DEFAULT_KEY_SWAP = false;
+constexpr bool DEFAULT_KEY_SWAP = false;
 
 static const GameParameters kDefaultGameParams{
     {"obs_show_ids",
