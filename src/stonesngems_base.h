@@ -58,6 +58,7 @@ const std::string DEFAULT_GAME_BOARD_STR =
     "19|19|19|19|19|19|19|19|19|19|19";
 constexpr bool DEFAULT_GRAVITY = true;
 constexpr int DEFAULT_BLOB_SWAP = -1;
+constexpr int DEFAULT_KEY_SWAP = false;
 
 static const GameParameters kDefaultGameParams{
     {"obs_show_ids",
@@ -71,6 +72,7 @@ static const GameParameters kDefaultGameParams{
     {"game_board_str", GameParameter(DEFAULT_GAME_BOARD_STR)},    // Game board string
     {"gravity", GameParameter(DEFAULT_GRAVITY)},                  // Game board string
     {"blob_swap", GameParameter(DEFAULT_BLOB_SWAP)},              // Blob swap hidden element
+    {"key_swap", GameParameter(DEFAULT_KEY_SWAP)},                // Key to gate swap
 };
 
 // Shared global state information relevant to all states for the given game
@@ -83,7 +85,8 @@ struct SharedStateInfo {
           blob_max_percentage(std::get<float>(params.at("blob_max_percentage"))),
           rng_seed(std::get<int>(params.at("rng_seed"))),
           game_board_str(std::get<std::string>(params.at("game_board_str"))),
-          gravity(std::get<bool>(params.at("gravity"))) {}
+          gravity(std::get<bool>(params.at("gravity"))),
+          key_swap(std::get<bool>(params.at("key_swap"))) {}
     // NOLINTBEGIN(misc-non-private-member-variables-in-classes)
     GameParameters params;                              // Copy of game parameters for state resetting
     bool obs_show_ids;                                  // Flag to show object IDs (currently not used)
@@ -97,6 +100,7 @@ struct SharedStateInfo {
     std::unordered_map<std::size_t, uint64_t> zrbht;    // Zobrist hashing table
     std::vector<bool> in_bounds_board;                  // Fast check for single-step in bounds
     std::vector<std::size_t> board_to_inbounds;         // Indexing conversion for in bounds checking
+    bool key_swap;                                      // Indexing conversion for in bounds checking
     // NOLINTEND(misc-non-private-member-variables-in-classes)
 };
 
@@ -334,8 +338,8 @@ private:
     void RemoveIndexID(std::size_t index) noexcept;
     void MoveItem(std::size_t index, Direction direction) noexcept;
     void SetItem(std::size_t index, const Element &element, int id, Direction direction = Direction::kNoop) noexcept;
-    [[nodiscard]] auto GetItem(std::size_t index, Direction direction = Direction::kNoop) const noexcept
-        -> const Element &;
+    [[nodiscard]] auto GetItem(std::size_t index,
+                               Direction direction = Direction::kNoop) const noexcept -> const Element &;
     [[nodiscard]] auto IsTypeAdjacent(std::size_t index, const Element &element) const noexcept -> bool;
 
     [[nodiscard]] auto CanRollLeft(std::size_t index) const noexcept -> bool;
