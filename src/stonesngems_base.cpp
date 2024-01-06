@@ -336,13 +336,22 @@ auto RNDGameState::get_hidden_item(std::size_t index) const noexcept -> HiddenCe
 }
 
 auto operator<<(std::ostream &os, const RNDGameState &state) -> std::ostream & {
+    const auto print_horz_boarder = [&]() {
+        for (std::size_t w = 0; w < state.board.cols + 2; ++w) {
+            os << "-";
+        }
+        os << std::endl;
+    };
+    print_horz_boarder();
     for (std::size_t h = 0; h < state.board.rows; ++h) {
+        os << "|";
         for (std::size_t w = 0; w < state.board.cols; ++w) {
             // NOLINTNEXTLINE(*-bounds-constant-array-index)
             os << kCellTypeToElement[state.board.grid[h * state.board.cols + w] + 1].id;
         }
-        os << std::endl;
+        os << "|" << std::endl;
     }
+    print_horz_boarder();
     return os;
 }
 
