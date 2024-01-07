@@ -582,6 +582,12 @@ const std::unordered_map<Element, Element, ElementHash> kKeyToGateSwap{
     {kElKeyYellow, kElGateGreenClosed},
     {kElKeyGreen, kElGateYellowClosed},
 };
+const std::unordered_map<Element, Element, ElementHash> kKeySwapDestroy{
+    {kElKeyBlue, kElKeyRed},
+    {kElKeyRed, kElKeyBlue},
+    {kElKeyYellow, kElKeyGreen},
+    {kElKeyGreen, kElKeyYellow},
+};
 // Key signal map
 const std::unordered_map<Element, RewardCodes, ElementHash> kKeyToSignal{
     {kElKeyRed, RewardCodes::kRewardCollectKeyRed},

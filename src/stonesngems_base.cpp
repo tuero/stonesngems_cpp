@@ -769,7 +769,15 @@ void RNDGameState::UpdateAgent(std::size_t index, Direction direction) noexcept 
     } else if (IsKey(GetItem(index, direction))) {
         // Collecting key, set gate open
         const Element &key_type = GetItem(index, direction);
-        OpenGate(shared_state_ptr->key_swap ? kKeyToGateSwap.at(key_type) : kKeyToGate.at(key_type));
+        if (shared_state_ptr->key_swap) {
+            OpenGate(kKeyToGateSwap.at(key_type));
+            for (const auto &index : board.find_all(ElementToItem(kKeySwapDestroy.at(key_type)))) {
+                SetItem(index, kElEmpty, -1);
+            }
+        } else {
+            OpenGate(kKeyToGate.at(key_type));
+        }
+        // OpenGate(shared_state_ptr->key_swap ? kKeyToGateSwap.at(key_type) : kKeyToGate.at(key_type));
         MoveItem(index, direction);
         board.agent_pos = IndexFromDirection(index, direction);
         board.agent_idx = IndexFromDirection(index, direction);
@@ -786,7 +794,15 @@ void RNDGameState::UpdateAgent(std::size_t index, Direction direction) noexcept 
                 local_state.reward_signal |= RewardCodes::kRewardCollectDiamond;
             } else if (IsKey(GetItem(index_gate, direction))) {
                 const Element &key_type = GetItem(index_gate, direction);
-                OpenGate(shared_state_ptr->key_swap ? kKeyToGateSwap.at(key_type) : kKeyToGate.at(key_type));
+                // OpenGate(shared_state_ptr->key_swap ? kKeyToGateSwap.at(key_type) : kKeyToGate.at(key_type));
+                if (shared_state_ptr->key_swap) {
+                    OpenGate(kKeyToGateSwap.at(key_type));
+                    for (const auto &index : board.find_all(ElementToItem(kKeySwapDestroy.at(key_type)))) {
+                        SetItem(index, kElEmpty, -1);
+                    }
+                } else {
+                    OpenGate(kKeyToGate.at(key_type));
+                }
                 local_state.reward_signal |= RewardCodes::kRewardCollectKey;
                 local_state.reward_signal |= kKeyToSignal.at(key_type);
             }
