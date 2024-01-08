@@ -45,7 +45,7 @@ void test_indices() {
             HiddenCellType::kKeyGreen,  HiddenCellType::kGateGreenClosed,  HiddenCellType::kGateGreenOpen,
             HiddenCellType::kKeyYellow, HiddenCellType::kGateYellowClosed, HiddenCellType::kGateYellowOpen,
         };
-        std::vector<int> indices;
+        std::vector<std::size_t> indices;
         for (const auto& element : element_set) {
             const auto temp_indices = state.get_indices(element);
             indices.insert(indices.end(), temp_indices.begin(), temp_indices.end());
