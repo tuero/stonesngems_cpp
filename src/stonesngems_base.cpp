@@ -28,6 +28,19 @@ const std::vector<Action> RNDGameState::ALL_ACTIONS{
 
 // ---------------------------------------------------------------------------
 
+namespace {
+[[noreturn]] inline void unreachable() {
+    // Uses compiler specific extensions if possible.
+    // Even if no extension is used, undefined behavior is still raised by
+    // an empty function body and the noreturn attribute.
+#if defined(_MSC_VER) && !defined(__clang__)    // MSVC
+    __assume(false);
+#else    // GCC, Clang
+    __builtin_unreachable();
+#endif
+}
+}    // namespace
+
 // https://en.wikipedia.org/wiki/Xorshift
 // Portable RNG Seed
 // NOLINTBEGIN
@@ -207,7 +220,7 @@ void RNDGameState::get_observation(std::vector<float> &obs) const noexcept {
     const std::size_t obs_size = kNumVisibleCellType * channel_length;
     obs.clear();
     obs.reserve(obs_size);
-    std::fill_n(std::back_inserter(obs), obs_size, 0);
+    std::fill_n(std::back_inserter(obs), obs_size, static_cast<float>(0));
     for (std::size_t i = 0; i < channel_length; ++i) {
         obs[to_underlying(GetItem(i).visible_type) * channel_length + i] = 1;
     }
@@ -379,7 +392,7 @@ auto RNDGameState::IndexFromDirection(std::size_t index, Direction direction) co
         case Direction::kDownLeft:
             return index + board.cols - 1;
         default:
-            __builtin_unreachable();
+            unreachable();
     }
 }
 auto RNDGameState::BoundsIndexFromDirection(std::size_t index, Direction direction) const noexcept -> std::size_t {
@@ -403,7 +416,7 @@ auto RNDGameState::BoundsIndexFromDirection(std::size_t index, Direction directi
         case Direction::kDownLeft:
             return index + (board.cols + 2) - 1;
         default:
-            __builtin_unreachable();
+            unreachable();
     }
 }
 
