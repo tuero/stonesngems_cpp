@@ -22,7 +22,7 @@ void test_indices() {
     {
         const std::unordered_set<HiddenCellType> element_set = {HiddenCellType::kDiamond, HiddenCellType::kExitClosed,
                                                                 HiddenCellType::kExitOpen};
-        std::vector<int> indices;
+        std::vector<std::size_t> indices;
         for (const auto& element : element_set) {
             const auto temp_indices = state.get_indices(element);
             indices.insert(indices.end(), temp_indices.begin(), temp_indices.end());

@@ -4,8 +4,6 @@
 #include <array>
 #include <iostream>
 #include <memory>
-#include <random>
-#include <set>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -29,7 +27,7 @@ using GameParameters = std::unordered_map<std::string, GameParameter>;
 constexpr bool DEFAULT_SHOW_OBS_IDS = false;
 constexpr int DEFAULT_MAGIC_WALL_STEPS = 140;
 constexpr int DEFAULT_BLOB_CHANCE = 20;
-constexpr float DEFAULT_BLOB_MAX_PERCENTAGE = 0.16;
+constexpr float DEFAULT_BLOB_MAX_PERCENTAGE = static_cast<float>(0.16);
 constexpr int DEFAULT_RNG_SEED = 0;
 const std::string DEFAULT_GAME_BOARD_STR =
     "22|40|1280|12|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|"
@@ -291,7 +289,7 @@ public:
 
     /**
      * Get all possible reward codes from the current state
-     * @return set of possible reward codes from the state
+     * @return )set of possible reward codes from the state
      */
     [[nodiscard]] auto get_valid_rewards() const noexcept -> std::unordered_set<RewardCodes>;
 

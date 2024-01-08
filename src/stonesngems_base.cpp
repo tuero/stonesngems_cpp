@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <random>
 
 #include "definitions.h"
 #include "util.h"
@@ -70,7 +71,7 @@ void RNDGameState::reset() {
     local_state = LocalState();
     local_state.random_state = splitmix64(shared_state_ptr->rng_seed);
     local_state.steps_remaining = board.max_steps;
-    shared_state_ptr->blob_chance = (board.cols * board.rows) * shared_state_ptr->blob_max_size;
+    shared_state_ptr->blob_chance = static_cast<uint8_t>((board.cols * board.rows) * shared_state_ptr->blob_max_size);
 
     // Set the item IDs
     for (std::size_t i = 0; i < board.cols * board.rows; ++i) {
@@ -235,7 +236,8 @@ auto RNDGameState::get_observation(const std::vector<VisibleCellType> &filter_el
         const std::size_t channel =
             std::distance(filter_elements.begin(),
                           std::find(filter_elements.begin(), filter_elements.end(), GetItem(i).visible_type));
-        obs[channel * channel_length + i] = channel < filter_elements.size() ? 1 : 0;
+        obs[channel * channel_length + i] =
+            channel < filter_elements.size() ? static_cast<float>(1) : static_cast<float>(0);
     }
     return obs;
 }
