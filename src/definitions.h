@@ -223,15 +223,6 @@ struct Board {
         return indices;
     }
 
-    [[nodiscard]] auto find_single(int8_t element) const noexcept -> std::size_t {
-        for (std::size_t i = 0; i < rows * cols; ++i) {
-            if (grid[i] == element) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
     void reset_updated() noexcept {
         for (std::size_t i = 0; i < rows * cols; ++i) {
             has_updated[i] = false;

@@ -69,7 +69,7 @@ void RNDGameState::reset() {
     // Board, local, and shared state info
     board = parse_board_str(shared_state_ptr->game_board_str);
     local_state = LocalState();
-    local_state.random_state = splitmix64(shared_state_ptr->rng_seed);
+    local_state.random_state = splitmix64(static_cast<uint64_t>(shared_state_ptr->rng_seed));
     local_state.steps_remaining = board.max_steps;
     shared_state_ptr->blob_chance = static_cast<uint8_t>((board.cols * board.rows) * shared_state_ptr->blob_max_size);
 
@@ -79,7 +79,7 @@ void RNDGameState::reset() {
     }
 
     // zorbist hashing
-    std::mt19937 gen(shared_state_ptr->rng_seed);
+    std::mt19937 gen(static_cast<unsigned long>(shared_state_ptr->rng_seed));
     std::uniform_int_distribution<uint64_t> dist(0);
     for (std::size_t channel = 0; channel < kNumHiddenCellType; ++channel) {
         for (std::size_t i = 0; i < board.cols * board.rows; ++i) {
@@ -89,7 +89,8 @@ void RNDGameState::reset() {
 
     // Set initial hash
     for (std::size_t i = 0; i < board.cols * board.rows; ++i) {
-        board.zorb_hash ^= shared_state_ptr->zrbht.at((board.item(i) * board.cols * board.rows) + i);
+        board.zorb_hash ^=
+            shared_state_ptr->zrbht.at((static_cast<std::size_t>(board.item(i)) * board.cols * board.rows) + i);
     }
 
     // In bounds fast access
@@ -160,8 +161,8 @@ void RNDGameState::apply_action(Action action) noexcept {
                 break;
             default:
                 // Handle compound types
-                const Element &element =
-                    kCellTypeToElement[board.item(i) + 1];    // NOLINT(*-bounds-constant-array-index)
+                // NOLINTNEXTLINE(*-bounds-constant-array-index)
+                const Element &element = kCellTypeToElement[static_cast<std::size_t>(board.item(i) + 1)];
                 if (IsButterfly(element)) {
                     UpdateButterfly(i, kButterflyToDirection.at(element));
                 } else if (IsFirefly(element)) {
@@ -211,7 +212,7 @@ auto RNDGameState::get_observation() const noexcept -> std::vector<float> {
     const std::size_t channel_length = board.cols * board.rows;
     std::vector<float> obs(kNumVisibleCellType * channel_length, 0);
     for (std::size_t i = 0; i < channel_length; ++i) {
-        obs[to_underlying(GetItem(i).visible_type) * channel_length + i] = 1;
+        obs[static_cast<std::size_t>(GetItem(i).visible_type) * channel_length + i] = 1;
     }
     return obs;
 }
@@ -223,7 +224,7 @@ void RNDGameState::get_observation(std::vector<float> &obs) const noexcept {
     obs.reserve(obs_size);
     std::fill_n(std::back_inserter(obs), obs_size, static_cast<float>(0));
     for (std::size_t i = 0; i < channel_length; ++i) {
-        obs[to_underlying(GetItem(i).visible_type) * channel_length + i] = 1;
+        obs[static_cast<std::size_t>(GetItem(i).visible_type) * channel_length + i] = 1;
     }
 }
 
@@ -233,9 +234,9 @@ auto RNDGameState::get_observation(const std::vector<VisibleCellType> &filter_el
     std::vector<float> obs(filter_elements.size() * channel_length, 0);
     for (std::size_t i = 0; i < channel_length; ++i) {
         // Slow but this allows us to control the order of the element channels than arbitrary set
-        const std::size_t channel =
+        const auto channel = static_cast<std::size_t>(
             std::distance(filter_elements.begin(),
-                          std::find(filter_elements.begin(), filter_elements.end(), GetItem(i).visible_type));
+                          std::find(filter_elements.begin(), filter_elements.end(), GetItem(i).visible_type)));
         obs[channel * channel_length + i] =
             channel < filter_elements.size() ? static_cast<float>(1) : static_cast<float>(0);
     }
@@ -320,7 +321,7 @@ auto RNDGameState::get_index_id(std::size_t index) const noexcept -> int {
 
 auto RNDGameState::get_id_index(int id) const noexcept -> std::size_t {
     const auto iter = local_state.id_index_map.find(static_cast<LocalState::id_type>(id));
-    return iter == local_state.id_index_map.end() ? -1 : iter->second;
+    return iter == local_state.id_index_map.end() ? std::numeric_limits<std::size_t>::max() : iter->second;
 }
 
 auto RNDGameState::get_valid_rewards() const noexcept -> std::unordered_set<RewardCodes> {
@@ -362,7 +363,7 @@ auto operator<<(std::ostream &os, const RNDGameState &state) -> std::ostream & {
         os << "|";
         for (std::size_t w = 0; w < state.board.cols; ++w) {
             // NOLINTNEXTLINE(*-bounds-constant-array-index)
-            os << kCellTypeToElement[state.board.grid[h * state.board.cols + w] + 1].id;
+            os << kCellTypeToElement[static_cast<std::size_t>(state.board.grid[h * state.board.cols + w] + 1)].id;
         }
         os << "|" << std::endl;
     }
@@ -484,14 +485,18 @@ void RNDGameState::RemoveIndexID(std::size_t index) noexcept {
 
 void RNDGameState::MoveItem(std::size_t index, Direction direction) noexcept {
     const std::size_t new_index = IndexFromDirection(index, direction);
-    board.zorb_hash ^= shared_state_ptr->zrbht.at((board.item(new_index) * board.cols * board.rows) + new_index);
+    board.zorb_hash ^= shared_state_ptr->zrbht.at(
+        (static_cast<std::size_t>(board.item(new_index)) * board.cols * board.rows) + new_index);
     board.item(new_index) = board.item(index);
-    board.zorb_hash ^= shared_state_ptr->zrbht.at((board.item(new_index) * board.cols * board.rows) + new_index);
+    board.zorb_hash ^= shared_state_ptr->zrbht.at(
+        (static_cast<std::size_t>(board.item(new_index)) * board.cols * board.rows) + new_index);
     // grid_.ids[new_index] = grid_.ids[index];
 
-    board.zorb_hash ^= shared_state_ptr->zrbht.at((board.item(index) * board.cols * board.rows) + index);
+    board.zorb_hash ^=
+        shared_state_ptr->zrbht.at((static_cast<std::size_t>(board.item(index)) * board.cols * board.rows) + index);
     board.item(index) = ElementToItem(kElEmpty);
-    board.zorb_hash ^= shared_state_ptr->zrbht.at((ElementToItem(kElEmpty) * board.cols * board.rows) + index);
+    board.zorb_hash ^= shared_state_ptr->zrbht.at(
+        (static_cast<std::size_t>(ElementToItem(kElEmpty)) * board.cols * board.rows) + index);
     board.has_updated[new_index] = true;
     // grid_.ids[index] = ++id_counter_;
 
@@ -502,16 +507,19 @@ void RNDGameState::MoveItem(std::size_t index, Direction direction) noexcept {
 void RNDGameState::SetItem(std::size_t index, const Element &element, int id, Direction direction) noexcept {
     (void)id;
     const std::size_t new_index = IndexFromDirection(index, direction);
-    board.zorb_hash ^= shared_state_ptr->zrbht.at((board.item(new_index) * board.cols * board.rows) + new_index);
+    board.zorb_hash ^= shared_state_ptr->zrbht.at(
+        (static_cast<std::size_t>(board.item(new_index)) * board.cols * board.rows) + new_index);
     board.item(new_index) = ElementToItem(element);
-    board.zorb_hash ^= shared_state_ptr->zrbht.at((ElementToItem(element) * board.cols * board.rows) + new_index);
+    board.zorb_hash ^= shared_state_ptr->zrbht.at(
+        (static_cast<std::size_t>(ElementToItem(element)) * board.cols * board.rows) + new_index);
     // grid_.ids[new_index] = id;
     board.has_updated[new_index] = true;
 }
 
 auto RNDGameState::GetItem(std::size_t index, Direction direction) const noexcept -> const Element & {
     const std::size_t new_index = IndexFromDirection(index, direction);
-    return kCellTypeToElement[board.item(new_index) + 1];    // NOLINT(*-bounds-constant-array-index)
+    // NOLINTNEXTLINE(*-bounds-constant-array-index)
+    return kCellTypeToElement[static_cast<std::size_t>(board.item(new_index) + 1)];
 }
 
 auto RNDGameState::IsTypeAdjacent(std::size_t index, const Element &element) const noexcept -> bool {
@@ -797,7 +805,7 @@ void RNDGameState::UpdateAgent(std::size_t index, Direction direction) noexcept 
         board.agent_pos = IndexFromDirection(index, direction);
         board.agent_idx = IndexFromDirection(index, direction);
         local_state.reward_signal |= RewardCodes::kRewardCollectKey;
-        local_state.reward_signal |= kKeyToSignal.at(key_type);
+        local_state.reward_signal |= static_cast<uint64_t>(kKeyToSignal.at(key_type));
     } else if (IsOpenGate(GetItem(index, direction))) {
         // Walking through an open gate, with traversable element on other side
         const std::size_t index_gate = IndexFromDirection(index, direction);
@@ -819,7 +827,7 @@ void RNDGameState::UpdateAgent(std::size_t index, Direction direction) noexcept 
                     OpenGate(kKeyToGate.at(key_type));
                 }
                 local_state.reward_signal |= RewardCodes::kRewardCollectKey;
-                local_state.reward_signal |= kKeyToSignal.at(key_type);
+                local_state.reward_signal |= static_cast<uint64_t>(kKeyToSignal.at(key_type));
             }
             // Move agent through gate
             SetItem(index_gate, kElAgent, -1, direction);
@@ -827,7 +835,7 @@ void RNDGameState::UpdateAgent(std::size_t index, Direction direction) noexcept 
             board.agent_pos = IndexFromDirection(index_gate, direction);
             board.agent_idx = IndexFromDirection(index_gate, direction);
             local_state.reward_signal |= RewardCodes::kRewardWalkThroughGate;
-            local_state.reward_signal |= kGateToSignal.at(GetItem(index_gate));
+            local_state.reward_signal |= static_cast<uint64_t>(kGateToSignal.at(GetItem(index_gate)));
         }
     } else if (IsType(index, kElExitOpen, direction)) {
         // Walking into exit after collecting enough gems
@@ -927,7 +935,8 @@ constexpr int BASE_CHANCE = 256;
 void RNDGameState::UpdateBlob(std::size_t index) noexcept {
     // Replace blobs if swap element set
     if (local_state.blob_swap != ElementToItem(kNullElement)) {
-        SetItem(index, kCellTypeToElement[local_state.blob_swap + 1], -1);    // NOLINT(*-bounds-constant-array-index)
+        // NOLINTNEXTLINE(*-bounds-constant-array-index)
+        SetItem(index, kCellTypeToElement[static_cast<std::size_t>(local_state.blob_swap + 1)], -1);
         AddIndexID(index);
         return;
     }

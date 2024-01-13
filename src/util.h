@@ -337,7 +337,7 @@ const Element kElOrangeRight = {
 // Hash for Element, so we can use as a map key
 struct ElementHash {
     auto operator()(const Element &e) const noexcept -> std::size_t {
-        return to_underlying(e.cell_type) - to_underlying(HiddenCellType::kNull);
+        return static_cast<std::size_t>(to_underlying(e.cell_type) - to_underlying(HiddenCellType::kNull));
     }
 };
 

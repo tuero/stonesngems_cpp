@@ -20,8 +20,8 @@ auto parse_board_str(const std::string &board_str) -> Board {
     assert(seglist.size() >= 2);
 
     // Get general info
-    const int rows = std::stoi(seglist[0]);
-    const int cols = std::stoi(seglist[1]);
+    const auto rows = static_cast<std::size_t>(std::stoi(seglist[0]));
+    const auto cols = static_cast<std::size_t>(std::stoi(seglist[1]));
     assert((int)seglist.size() == rows * cols + 4);
     const int max_steps = std::stoi(seglist[2]);
     const int max_gems = std::stoi(seglist[3]);
@@ -34,8 +34,8 @@ auto parse_board_str(const std::string &board_str) -> Board {
         board.item(i - 4) = to_underlying(el);
         // Really shouldn't be creating a state with the agent in the exit
         if (el == HiddenCellType::kAgent || el == HiddenCellType::kAgentInExit) {
-            board.agent_pos = static_cast<int>(i) - 4;
-            board.agent_idx = static_cast<int>(i) - 4;
+            board.agent_pos = i - 4;
+            board.agent_idx = i - 4;
             ++agent_counter;
         }
     }

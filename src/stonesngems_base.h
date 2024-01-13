@@ -283,7 +283,7 @@ public:
     /**
      * Get the index of the element for the given ID
      * @param id The id to query
-     * @return the flat index of the element if trackable, else -1
+     * @return the flat index of the element if trackable, else numeric_limits<std::size_t>::max()
      */
     [[nodiscard]] auto get_id_index(int id) const noexcept -> std::size_t;
 
