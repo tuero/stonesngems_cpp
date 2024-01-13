@@ -22,7 +22,7 @@ auto parse_board_str(const std::string &board_str) -> Board {
     // Get general info
     const auto rows = static_cast<std::size_t>(std::stoi(seglist[0]));
     const auto cols = static_cast<std::size_t>(std::stoi(seglist[1]));
-    assert((int)seglist.size() == rows * cols + 4);
+    assert(seglist.size() == rows * cols + 4);
     const int max_steps = std::stoi(seglist[2]);
     const int max_gems = std::stoi(seglist[3]);
     Board board(rows, cols, static_cast<uint8_t>(max_gems), max_steps);
