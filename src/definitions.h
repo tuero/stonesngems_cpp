@@ -141,7 +141,7 @@ constexpr int kNumDirections = 9;
     return static_cast<Direction>(to_underlying(action));
 }
 
-enum RewardCodes {
+enum RewardCodes : uint64_t {
     kRewardAgentDies = 1 << 0,
     kRewardCollectDiamond = 1 << 1,
     kRewardWalkThroughExit = 1 << 2,
