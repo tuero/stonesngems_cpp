@@ -5,7 +5,6 @@
 #include <cassert>
 #include <cstdint>
 #include <limits>
-#include <unordered_map>
 #include <vector>
 
 namespace stonesngems {
@@ -179,8 +178,8 @@ struct Element {
           id(0),
           has_updated(false) {}
 
-    Element(HiddenCellType cell_type, VisibleCellType visible_type, int properties, char id)
-        : cell_type(cell_type), visible_type(visible_type), properties(properties), id(id), has_updated(false) {}
+    Element(HiddenCellType cell_type_, VisibleCellType visible_type_, int properties_, char id_)
+        : cell_type(cell_type_), visible_type(visible_type_), properties(properties_), id(id_), has_updated(false) {}
 
     auto operator==(const Element &rhs) const -> bool {
         return this->cell_type == rhs.cell_type;
@@ -192,31 +191,41 @@ struct Element {
 };
 
 struct Board {
-    Board() = delete;
-    Board(std::size_t rows, std::size_t cols, uint8_t gems_required, int max_steps)
-        : rows(rows),
-          cols(cols),
-          gems_required(gems_required),
-          max_steps(max_steps),
-          grid(rows * cols, 0),
+    Board() = default;
+    Board(std::size_t rows_, std::size_t cols_, int gems_required_, int max_steps_)
+        : rows(rows_),
+          cols(cols_),
+          max_steps(max_steps_),
+          gems_required(gems_required_),
+          grid(rows * cols, HiddenCellType::kNull),
           has_updated(rows * cols, false) {}
 
     auto operator==(const Board &other) const -> bool {
         return grid == other.grid;
     }
 
-    [[nodiscard]] auto item(std::size_t index) noexcept -> int8_t & {
+    [[nodiscard]] auto item(std::size_t index) noexcept -> HiddenCellType & {
         return grid[index];
     }
 
-    [[nodiscard]] auto item(std::size_t index) const noexcept -> int8_t {
+    [[nodiscard]] auto item(std::size_t index) const noexcept -> HiddenCellType {
         return grid[index];
     }
 
-    [[nodiscard]] auto find_all(int8_t element) const noexcept -> std::vector<std::size_t> {
+    [[nodiscard]] auto find_all(HiddenCellType element) const noexcept -> std::vector<std::size_t> {
         std::vector<std::size_t> indices;
         for (std::size_t i = 0; i < rows * cols; ++i) {
             if (grid[i] == element) {
+                indices.push_back(i);
+            }
+        }
+        return indices;
+    }
+
+    [[nodiscard]] auto find_all(Element element) const noexcept -> std::vector<std::size_t> {
+        std::vector<std::size_t> indices;
+        for (std::size_t i = 0; i < rows * cols; ++i) {
+            if (grid[i] == element.cell_type) {
                 indices.push_back(i);
             }
         }
@@ -231,13 +240,13 @@ struct Board {
 
     // NOLINTBEGIN(misc-non-private-member-variables-in-classes)
     uint64_t zorb_hash = 0;
-    std::size_t rows;
-    std::size_t cols;
-    uint8_t gems_required;
+    std::size_t rows{};
+    std::size_t cols{};
     std::size_t agent_pos = kAgentPosDie;
     std::size_t agent_idx = kAgentPosDie;
-    int max_steps;
-    std::vector<int8_t> grid;
+    int max_steps = -1;
+    int gems_required = -1;
+    std::vector<HiddenCellType> grid;
     std::vector<bool> has_updated;
     // NOLINTEND(misc-non-private-member-variables-in-classes)
 };

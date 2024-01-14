@@ -30,8 +30,12 @@ auto parse_board_str(const std::string &board_str) -> Board {
     // Parse grid
     int agent_counter = 0;
     for (std::size_t i = 4; i < seglist.size(); ++i) {
-        const auto el = static_cast<HiddenCellType>(std::stoi(seglist[i]));
-        board.item(i - 4) = to_underlying(el);
+        const auto hidden_type = std::stoi(seglist[i]);
+        if (hidden_type < 0 || hidden_type >= kNumHiddenCellType) {
+            throw std::invalid_argument(std::string("Unknown element type: ") + std::to_string(hidden_type));
+        }
+        const auto el = static_cast<HiddenCellType>(hidden_type);
+        board.item(i - 4) = el;
         // Really shouldn't be creating a state with the agent in the exit
         if (el == HiddenCellType::kAgent || el == HiddenCellType::kAgentInExit) {
             board.agent_pos = i - 4;
@@ -56,7 +60,7 @@ auto board_to_str(const Board &board) -> std::string {
              << static_cast<int>(board.gems_required);
     for (const auto &el : board.grid) {
         board_ss << "|";
-        if (el < SIZE_REQUIRING_ZERO) {
+        if (static_cast<int>(el) < SIZE_REQUIRING_ZERO) {
             board_ss << "0";
         }
         board_ss << static_cast<int>(el);

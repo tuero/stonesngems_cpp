@@ -56,7 +56,6 @@ const std::string DEFAULT_GAME_BOARD_STR =
     "19|19|19|19|19|19|19|19|19|19|19";
 constexpr bool DEFAULT_GRAVITY = true;
 constexpr int DEFAULT_BLOB_SWAP = -1;
-constexpr bool DEFAULT_KEY_SWAP = false;
 
 static const GameParameters kDefaultGameParams{
     {"obs_show_ids",
@@ -70,27 +69,25 @@ static const GameParameters kDefaultGameParams{
     {"game_board_str", GameParameter(DEFAULT_GAME_BOARD_STR)},    // Game board string
     {"gravity", GameParameter(DEFAULT_GRAVITY)},                  // Game board string
     {"blob_swap", GameParameter(DEFAULT_BLOB_SWAP)},              // Blob swap hidden element
-    {"key_swap", GameParameter(DEFAULT_KEY_SWAP)},                // Key to gate swap
 };
 
 // Shared global state information relevant to all states for the given game
 struct SharedStateInfo {
-    SharedStateInfo(const GameParameters &params)
-        : params(params),
+    SharedStateInfo(GameParameters params_)
+        : params(std::move(params_)),
           obs_show_ids(std::get<bool>(params.at("obs_show_ids"))),
           magic_wall_steps(std::get<int>(params.at("magic_wall_steps"))),
-          blob_chance(std::get<int>(params.at("blob_chance"))),
+          blob_chance(static_cast<uint8_t>(std::get<int>(params.at("blob_chance")))),
           blob_max_percentage(std::get<float>(params.at("blob_max_percentage"))),
           rng_seed(std::get<int>(params.at("rng_seed"))),
           game_board_str(std::get<std::string>(params.at("game_board_str"))),
-          gravity(std::get<bool>(params.at("gravity"))),
-          key_swap(std::get<bool>(params.at("key_swap"))) {}
+          gravity(std::get<bool>(params.at("gravity"))) {}
     // NOLINTBEGIN(misc-non-private-member-variables-in-classes)
     GameParameters params;                              // Copy of game parameters for state resetting
     bool obs_show_ids;                                  // Flag to show object IDs (currently not used)
-    uint16_t magic_wall_steps;                          // Number of steps the magic wall stays active for
+    int magic_wall_steps;                               // Number of steps the magic wall stays active for
     uint8_t blob_chance;                                // Chance (out of 256) for blob to spawn
-    uint16_t blob_max_size = 0;                         // Max blob size in terms of grid spaces
+    int blob_max_size = 0;                              // Max blob size in terms of grid spaces
     float blob_max_percentage;                          // Max blob size as percentage of map size
     int rng_seed;                                       // Seed
     std::string game_board_str;                         // String representation of the starting state
@@ -98,11 +95,14 @@ struct SharedStateInfo {
     std::unordered_map<std::size_t, uint64_t> zrbht;    // Zobrist hashing table
     std::vector<bool> in_bounds_board;                  // Fast check for single-step in bounds
     std::vector<std::size_t> board_to_inbounds;         // Indexing conversion for in bounds checking
-    bool key_swap;                                      // Indexing conversion for in bounds checking
     // NOLINTEND(misc-non-private-member-variables-in-classes)
 };
 
 // Information specific for the current game state
+struct IndexId {
+    std::size_t index;
+    int id;
+};
 struct LocalState {
     bool operator==(const LocalState &other) const {
         return magic_wall_steps == other.magic_wall_steps && blob_size == other.blob_size &&
@@ -111,19 +111,18 @@ struct LocalState {
     }
     using id_type = uint16_t;
     // NOLINTBEGIN(misc-non-private-member-variables-in-classes)
-    uint16_t magic_wall_steps = 0;                            // Number of steps remaining for the magic wall
-    uint16_t blob_size = 0;                                   // Current size of the blob
-    int8_t blob_swap = -1;                                    // Swap element when the blob vanishes
-    uint8_t gems_collected = 0;                               // Number of gems collected
-    uint8_t current_reward = 0;                               // Reward for the current game state
-    uint64_t reward_signal = 0;                               // Signal for external information about events
-    bool magic_active = false;                                // Flag if magic wall is currently active
-    bool blob_enclosed = true;                                // Flag if blob is enclosed
-    int steps_remaining = -1;                                 // Number of steps remaining (if timeout set)
-    uint64_t random_state = 1;                                // State of Xorshift rng
-    uint16_t id_state = 0;                                    // Current ID state
-    std::unordered_map<std::size_t, id_type> index_id_map;    // Index to ID mapping
-    std::unordered_map<id_type, std::size_t> id_index_map;    // ID to index mapping
+    std::vector<IndexId> index_id_mappings;
+    uint64_t random_state = 1;                           // State of Xorshift rng
+    uint64_t reward_signal = 0;                          // Signal for external information about events
+    int steps_remaining = -1;                            // Number of steps remaining (if timeout set)
+    int gems_collected = 0;                              // Number of gems collected
+    int current_reward = 0;                              // Reward for the current game state
+    int magic_wall_steps = 0;                            // Number of steps remaining for the magic wall
+    int blob_size = 0;                                   // Current size of the blob
+    int id_state = 0;                                    // Current ID state
+    HiddenCellType blob_swap = HiddenCellType::kNull;    // Swap element when the blob vanishes
+    bool magic_active = false;                           // Flag if magic wall is currently active
+    bool blob_enclosed = true;                           // Flag if blob is enclosed
     // NOLINTEND(misc-non-private-member-variables-in-classes)
 };
 
@@ -304,13 +303,6 @@ public:
      * @return Agent index
      */
     [[nodiscard]] auto get_agent_index() const noexcept -> std::size_t;
-
-    /**
-     * Get the hidden cell type ID at the given index
-     * @param index The index to query
-     * @return The cell type ID
-     */
-    [[nodiscard]] auto get_index_item(std::size_t index) const noexcept -> int8_t;
 
     /**
      * Get the hidden cell item at the given index

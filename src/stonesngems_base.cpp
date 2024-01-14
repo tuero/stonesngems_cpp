@@ -9,9 +9,7 @@
 
 namespace stonesngems {
 
-RNDGameState::RNDGameState(const GameParameters &params)
-    : shared_state_ptr(std::make_shared<SharedStateInfo>(params)),
-      board(parse_board_str(std::get<std::string>(params.at("game_board_str")))) {
+RNDGameState::RNDGameState(const GameParameters &params) : shared_state_ptr(std::make_shared<SharedStateInfo>(params)) {
     reset();
 }
 
@@ -71,7 +69,8 @@ void RNDGameState::reset() {
     local_state = LocalState();
     local_state.random_state = splitmix64(static_cast<uint64_t>(shared_state_ptr->rng_seed));
     local_state.steps_remaining = board.max_steps;
-    shared_state_ptr->blob_chance = static_cast<uint8_t>((board.cols * board.rows) * shared_state_ptr->blob_max_size);
+    shared_state_ptr->blob_max_size =
+        static_cast<int>(static_cast<float>(board.cols * board.rows) * shared_state_ptr->blob_max_percentage);
 
     // Set the item IDs
     for (std::size_t i = 0; i < board.cols * board.rows; ++i) {
@@ -129,40 +128,40 @@ void RNDGameState::apply_action(Action action) noexcept {
         }
         switch (board.item(i)) {
             // Handle non-compound types
-            case static_cast<std::underlying_type_t<HiddenCellType>>(HiddenCellType::kStone):
+            case HiddenCellType::kStone:
                 UpdateStone(i);
                 break;
-            case static_cast<std::underlying_type_t<HiddenCellType>>(HiddenCellType::kStoneFalling):
+            case HiddenCellType::kStoneFalling:
                 UpdateStoneFalling(i);
                 break;
-            case static_cast<std::underlying_type_t<HiddenCellType>>(HiddenCellType::kDiamond):
+            case HiddenCellType::kDiamond:
                 UpdateDiamond(i);
                 break;
-            case static_cast<std::underlying_type_t<HiddenCellType>>(HiddenCellType::kDiamondFalling):
+            case HiddenCellType::kDiamondFalling:
                 UpdateDiamondFalling(i);
                 break;
-            case static_cast<std::underlying_type_t<HiddenCellType>>(HiddenCellType::kNut):
+            case HiddenCellType::kNut:
                 UpdateNut(i);
                 break;
-            case static_cast<std::underlying_type_t<HiddenCellType>>(HiddenCellType::kNutFalling):
+            case HiddenCellType::kNutFalling:
                 UpdateNutFalling(i);
                 break;
-            case static_cast<std::underlying_type_t<HiddenCellType>>(HiddenCellType::kBomb):
+            case HiddenCellType::kBomb:
                 UpdateBomb(i);
                 break;
-            case static_cast<std::underlying_type_t<HiddenCellType>>(HiddenCellType::kBombFalling):
+            case HiddenCellType::kBombFalling:
                 UpdateBombFalling(i);
                 break;
-            case static_cast<std::underlying_type_t<HiddenCellType>>(HiddenCellType::kExitClosed):
+            case HiddenCellType::kExitClosed:
                 UpdateExit(i);
                 break;
-            case static_cast<std::underlying_type_t<HiddenCellType>>(HiddenCellType::kBlob):
+            case HiddenCellType::kBlob:
                 UpdateBlob(i);
                 break;
             default:
                 // Handle compound types
                 // NOLINTNEXTLINE(*-bounds-constant-array-index)
-                const Element &element = kCellTypeToElement[static_cast<std::size_t>(board.item(i) + 1)];
+                const Element &element = kCellTypeToElement[static_cast<std::size_t>(board.item(i)) + 1];
                 if (IsButterfly(element)) {
                     UpdateButterfly(i, kButterflyToDirection.at(element));
                 } else if (IsFirefly(element)) {
@@ -288,7 +287,7 @@ auto RNDGameState::get_hash() const noexcept -> uint64_t {
 
 auto RNDGameState::get_positions(HiddenCellType element) const noexcept -> std::vector<Position> {
     std::vector<Position> indices;
-    for (const auto &idx : board.find_all(static_cast<std::underlying_type_t<HiddenCellType>>(element))) {
+    for (const auto &idx : board.find_all(element)) {
         indices.emplace_back(idx / board.cols, idx % board.cols);
     }
     return indices;
@@ -304,7 +303,7 @@ auto RNDGameState::index_to_position(std::size_t index) const noexcept -> Positi
 
 auto RNDGameState::get_indices(HiddenCellType element) const noexcept -> std::vector<std::size_t> {
     std::vector<std::size_t> indices;
-    for (const auto &idx : board.find_all(static_cast<std::underlying_type_t<HiddenCellType>>(element))) {
+    for (const auto &idx : board.find_all(element)) {
         indices.push_back(idx);
     }
     return indices;
@@ -315,19 +314,26 @@ auto RNDGameState::is_pos_in_bounds(const Position &position) const noexcept -> 
 }
 
 auto RNDGameState::get_index_id(std::size_t index) const noexcept -> int {
-    const auto iter = local_state.index_id_map.find(index);
-    return iter == local_state.index_id_map.end() ? -1 : static_cast<int>(iter->second);
+    for (const auto &p : local_state.index_id_mappings) {
+        if (p.index == index) {
+            return p.id;
+        }
+    }
+    return -1;
 }
 
 auto RNDGameState::get_id_index(int id) const noexcept -> std::size_t {
-    const auto iter = local_state.id_index_map.find(static_cast<LocalState::id_type>(id));
-    return iter == local_state.id_index_map.end() ? std::numeric_limits<std::size_t>::max() : iter->second;
+    for (const auto &p : local_state.index_id_mappings) {
+        if (p.id == id) {
+            return p.index;
+        }
+    }
+    return std::numeric_limits<std::size_t>::max();
 }
 
 auto RNDGameState::get_valid_rewards() const noexcept -> std::unordered_set<RewardCodes> {
     std::unordered_set<RewardCodes> reward_codes;
-    for (const auto &el_id : board.grid) {
-        const auto el = static_cast<HiddenCellType>(el_id);
+    for (const auto &el : board.grid) {
         if (kElementToRewardMap.find(el) != kElementToRewardMap.end()) {
             reward_codes.insert(kElementToRewardMap.at(el));
         }
@@ -343,12 +349,8 @@ auto RNDGameState::get_agent_index() const noexcept -> std::size_t {
     return board.agent_idx;
 }
 
-auto RNDGameState::get_index_item(std::size_t index) const noexcept -> int8_t {
-    return board.item(index);
-}
-
 auto RNDGameState::get_hidden_item(std::size_t index) const noexcept -> HiddenCellType {
-    return static_cast<HiddenCellType>(board.item(index));
+    return board.item(index);
 }
 
 auto operator<<(std::ostream &os, const RNDGameState &state) -> std::ostream & {
@@ -363,7 +365,7 @@ auto operator<<(std::ostream &os, const RNDGameState &state) -> std::ostream & {
         os << "|";
         for (std::size_t w = 0; w < state.board.cols; ++w) {
             // NOLINTNEXTLINE(*-bounds-constant-array-index)
-            os << kCellTypeToElement[static_cast<std::size_t>(state.board.grid[h * state.board.cols + w] + 1)].id;
+            os << kCellTypeToElement[static_cast<std::size_t>(state.board.grid[h * state.board.cols + w]) + 1].id;
         }
         os << "|" << std::endl;
     }
@@ -439,35 +441,32 @@ auto RNDGameState::HasProperty(std::size_t index, int property, Direction direct
 }
 
 void RNDGameState::UpdateIDIndex(std::size_t index_old, std::size_t index_new) noexcept {
-    if (local_state.index_id_map.find(index_old) != local_state.index_id_map.end()) {
-        const auto id = local_state.index_id_map.at(index_old);
-        local_state.index_id_map.erase(index_old);
-        local_state.index_id_map[index_new] = id;
-        local_state.id_index_map[id] = index_new;
+    for (auto &p : local_state.index_id_mappings) {
+        if (p.index == index_old) {
+            p.index = index_new;
+            return;
+        }
     }
 }
 
 void RNDGameState::UpdateIndexID(std::size_t index) noexcept {
-    if (local_state.index_id_map.find(index) != local_state.index_id_map.end()) {
-        const auto id_old = local_state.index_id_map.at(index);
-        const auto id_new = ++local_state.id_state;
-        local_state.id_index_map.erase(id_old);
-        local_state.id_index_map[id_new] = index;
-        local_state.index_id_map[index] = id_new;
+    for (auto &p : local_state.index_id_mappings) {
+        if (p.index == index) {
+            p.id = ++local_state.id_state;
+            return;
+        }
     }
 }
 
 void RNDGameState::AddIndexID(std::size_t index) noexcept {
     switch (board.item(index)) {
-        case static_cast<std::underlying_type_t<HiddenCellType>>(HiddenCellType::kStone):
-        case static_cast<std::underlying_type_t<HiddenCellType>>(HiddenCellType::kStoneFalling):
-        case static_cast<std::underlying_type_t<HiddenCellType>>(HiddenCellType::kDiamond):
-        case static_cast<std::underlying_type_t<HiddenCellType>>(HiddenCellType::kDiamondFalling):
-        case static_cast<std::underlying_type_t<HiddenCellType>>(HiddenCellType::kNut):
-        case static_cast<std::underlying_type_t<HiddenCellType>>(HiddenCellType::kNutFalling): {
-            const auto id = ++local_state.id_state;
-            local_state.id_index_map[id] = index;
-            local_state.index_id_map[index] = id;
+        case HiddenCellType::kStone:
+        case HiddenCellType::kStoneFalling:
+        case HiddenCellType::kDiamond:
+        case HiddenCellType::kDiamondFalling:
+        case HiddenCellType::kNut:
+        case HiddenCellType::kNutFalling: {
+            local_state.index_id_mappings.emplace_back(index, ++local_state.id_state);
             break;
         }
         default:
@@ -476,11 +475,7 @@ void RNDGameState::AddIndexID(std::size_t index) noexcept {
 }
 
 void RNDGameState::RemoveIndexID(std::size_t index) noexcept {
-    if (local_state.index_id_map.find(index) != local_state.index_id_map.end()) {
-        const auto id = local_state.index_id_map.at(index);
-        local_state.id_index_map.erase(id);
-        local_state.index_id_map.erase(index);
-    }
+    std::erase_if(local_state.index_id_mappings, [&](const auto &p) -> bool { return p.index == index; });
 }
 
 void RNDGameState::MoveItem(std::size_t index, Direction direction) noexcept {
@@ -494,7 +489,7 @@ void RNDGameState::MoveItem(std::size_t index, Direction direction) noexcept {
 
     board.zorb_hash ^=
         shared_state_ptr->zrbht.at((static_cast<std::size_t>(board.item(index)) * board.cols * board.rows) + index);
-    board.item(index) = ElementToItem(kElEmpty);
+    board.item(index) = kElEmpty.cell_type;
     board.zorb_hash ^= shared_state_ptr->zrbht.at(
         (static_cast<std::size_t>(ElementToItem(kElEmpty)) * board.cols * board.rows) + index);
     board.has_updated[new_index] = true;
@@ -509,7 +504,7 @@ void RNDGameState::SetItem(std::size_t index, const Element &element, int id, Di
     const std::size_t new_index = IndexFromDirection(index, direction);
     board.zorb_hash ^= shared_state_ptr->zrbht.at(
         (static_cast<std::size_t>(board.item(new_index)) * board.cols * board.rows) + new_index);
-    board.item(new_index) = ElementToItem(element);
+    board.item(new_index) = element.cell_type;
     board.zorb_hash ^= shared_state_ptr->zrbht.at(
         (static_cast<std::size_t>(ElementToItem(element)) * board.cols * board.rows) + new_index);
     // grid_.ids[new_index] = id;
@@ -519,7 +514,7 @@ void RNDGameState::SetItem(std::size_t index, const Element &element, int id, Di
 auto RNDGameState::GetItem(std::size_t index, Direction direction) const noexcept -> const Element & {
     const std::size_t new_index = IndexFromDirection(index, direction);
     // NOLINTNEXTLINE(*-bounds-constant-array-index)
-    return kCellTypeToElement[static_cast<std::size_t>(board.item(new_index) + 1)];
+    return kCellTypeToElement[static_cast<std::size_t>(board.item(new_index)) + 1];
 }
 
 auto RNDGameState::IsTypeAdjacent(std::size_t index, const Element &element) const noexcept -> bool {
@@ -767,7 +762,6 @@ void RNDGameState::UpdateExit(std::size_t index) noexcept {
     }
 }
 
-constexpr int REWARD_MULTIPLIER_END = 100;
 void RNDGameState::UpdateAgent(std::size_t index, Direction direction) noexcept {
     // If action results not in bounds, don't do anything
     if (!InBounds(index, direction)) {
@@ -792,14 +786,7 @@ void RNDGameState::UpdateAgent(std::size_t index, Direction direction) noexcept 
     } else if (IsKey(GetItem(index, direction))) {
         // Collecting key, set gate open
         const Element &key_type = GetItem(index, direction);
-        if (shared_state_ptr->key_swap) {
-            OpenGate(kKeyToGateSwap.at(key_type));
-            for (const auto &index : board.find_all(ElementToItem(kKeySwapDestroy.at(key_type)))) {
-                SetItem(index, kElEmpty, -1);
-            }
-        } else {
-            OpenGate(kKeyToGate.at(key_type));
-        }
+        OpenGate(kKeyToGate.at(key_type));
         // OpenGate(shared_state_ptr->key_swap ? kKeyToGateSwap.at(key_type) : kKeyToGate.at(key_type));
         MoveItem(index, direction);
         board.agent_pos = IndexFromDirection(index, direction);
@@ -817,15 +804,7 @@ void RNDGameState::UpdateAgent(std::size_t index, Direction direction) noexcept 
                 local_state.reward_signal |= RewardCodes::kRewardCollectDiamond;
             } else if (IsKey(GetItem(index_gate, direction))) {
                 const Element &key_type = GetItem(index_gate, direction);
-                // OpenGate(shared_state_ptr->key_swap ? kKeyToGateSwap.at(key_type) : kKeyToGate.at(key_type));
-                if (shared_state_ptr->key_swap) {
-                    OpenGate(kKeyToGateSwap.at(key_type));
-                    for (const auto &index : board.find_all(ElementToItem(kKeySwapDestroy.at(key_type)))) {
-                        SetItem(index, kElEmpty, -1);
-                    }
-                } else {
-                    OpenGate(kKeyToGate.at(key_type));
-                }
+                OpenGate(kKeyToGate.at(key_type));
                 local_state.reward_signal |= RewardCodes::kRewardCollectKey;
                 local_state.reward_signal |= static_cast<uint64_t>(kKeyToSignal.at(key_type));
             }
@@ -844,7 +823,7 @@ void RNDGameState::UpdateAgent(std::size_t index, Direction direction) noexcept 
         board.agent_pos = kAgentPosExit;
         board.agent_idx = IndexFromDirection(index, direction);
         local_state.reward_signal |= RewardCodes::kRewardWalkThroughExit;
-        local_state.current_reward += local_state.steps_remaining * REWARD_MULTIPLIER_END / board.max_steps;
+        local_state.current_reward += local_state.steps_remaining;
     }
 }
 
@@ -934,9 +913,9 @@ constexpr int BASE_CHANCE = 256;
 
 void RNDGameState::UpdateBlob(std::size_t index) noexcept {
     // Replace blobs if swap element set
-    if (local_state.blob_swap != ElementToItem(kNullElement)) {
+    if (local_state.blob_swap != kNullElement.cell_type) {
         // NOLINTNEXTLINE(*-bounds-constant-array-index)
-        SetItem(index, kCellTypeToElement[static_cast<std::size_t>(local_state.blob_swap + 1)], -1);
+        SetItem(index, kCellTypeToElement[static_cast<std::size_t>(local_state.blob_swap) + 1], -1);
         AddIndexID(index);
         return;
     }
@@ -961,8 +940,10 @@ void RNDGameState::UpdateExplosions(std::size_t index) noexcept {
 }
 
 void RNDGameState::OpenGate(const Element &element) noexcept {
-    for (const auto &index : board.find_all(ElementToItem(element))) {
-        SetItem(index, kGateOpenMap.at(GetItem(index)), -1);
+    for (std::size_t index = 0; index < board.grid.size(); ++index) {
+        if (board.item(index) == element.cell_type) {
+            SetItem(index, kGateOpenMap.at(GetItem(index)), -1);
+        }
     }
 }
 
@@ -980,16 +961,17 @@ void RNDGameState::StartScan() noexcept {
 }
 
 void RNDGameState::EndScan() noexcept {
-    if (local_state.blob_swap == ElementToItem(kNullElement)) {
+    if (local_state.blob_swap == kNullElement.cell_type) {
         if (local_state.blob_enclosed) {
-            local_state.blob_swap = ElementToItem(kElDiamond);
+            local_state.blob_swap = kElDiamond.cell_type;
         }
         if (local_state.blob_size > shared_state_ptr->blob_max_size) {
-            local_state.blob_swap = ElementToItem(kElStone);
+            local_state.blob_swap = kElStone.cell_type;
         }
     }
     if (local_state.magic_active) {
-        local_state.magic_wall_steps = std::max(local_state.magic_wall_steps - 1, 0);
+        local_state.magic_wall_steps =
+            static_cast<decltype(local_state.magic_wall_steps)>(std::max(local_state.magic_wall_steps - 1, 0));
     }
     local_state.magic_active = local_state.magic_active && (local_state.magic_wall_steps > 0);
 }
