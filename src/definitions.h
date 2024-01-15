@@ -110,7 +110,7 @@ enum class VisibleCellType : int8_t {
 constexpr int kNumVisibleCellType = 34;
 
 // Actions the agent can take
-enum class Action : std::size_t {
+enum class Action {
     kNoop = 0,
     kUp = 1,
     kRight = 2,
@@ -123,7 +123,7 @@ const std::array<Action, kNumActions> ALL_ACTIONS{
 };
 
 // Directions the interactions take place
-enum class Direction : decltype(to_underlying(Action::kNoop)) {
+enum class Direction {
     kNoop = to_underlying(Action::kNoop),
     kUp = to_underlying(Action::kUp),
     kRight = to_underlying(Action::kRight),
