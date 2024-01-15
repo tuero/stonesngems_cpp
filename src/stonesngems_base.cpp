@@ -114,7 +114,19 @@ void RNDGameState::reset() {
     }
 }
 
-void RNDGameState::apply_action(Action action) noexcept {
+void RNDGameState::apply_action(Action action) {
+    // Check for valid action
+    switch (action) {
+        case Action::kUp:
+        case Action::kRight:
+        case Action::kDown:
+        case Action::kLeft:
+        case Action::kNoop:
+            break;
+        default:
+            throw std::invalid_argument("Unknown action.");
+    }
+
     StartScan();
 
     // Handle agent first

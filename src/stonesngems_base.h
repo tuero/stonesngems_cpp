@@ -145,7 +145,7 @@ public:
      * Apply the action to the current state, and set the reward and signals.
      * @param action The action to apply, should be one of the legal actions
      */
-    void apply_action(Action action) noexcept;
+    void apply_action(Action action);
 
     /**
      * Check if the state is terminal, meaning either solution, timeout, or agent dies.
