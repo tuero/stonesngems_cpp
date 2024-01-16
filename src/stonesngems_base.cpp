@@ -1,6 +1,7 @@
 #include "stonesngems_base.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cstdint>
 #include <random>
 
@@ -115,18 +116,7 @@ void RNDGameState::reset() {
 }
 
 void RNDGameState::apply_action(Action action) {
-    // Check for valid action
-    switch (action) {
-        case Action::kUp:
-        case Action::kRight:
-        case Action::kDown:
-        case Action::kLeft:
-        case Action::kNoop:
-            break;
-        default:
-            throw std::invalid_argument("Unknown action.");
-    }
-
+    assert(is_valid_action(action));
     StartScan();
 
     // Handle agent first
@@ -298,6 +288,7 @@ auto RNDGameState::get_hash() const noexcept -> uint64_t {
 }
 
 auto RNDGameState::get_positions(HiddenCellType element) const noexcept -> std::vector<Position> {
+    assert(is_valid_hidden_element(element));
     std::vector<Position> indices;
     for (const auto &idx : board.find_all(element)) {
         indices.emplace_back(idx / board.cols, idx % board.cols);
@@ -314,6 +305,7 @@ auto RNDGameState::index_to_position(std::size_t index) const noexcept -> Positi
 }
 
 auto RNDGameState::get_indices(HiddenCellType element) const noexcept -> std::vector<std::size_t> {
+    assert(is_valid_hidden_element(element));
     std::vector<std::size_t> indices;
     for (const auto &idx : board.find_all(element)) {
         indices.push_back(idx);
@@ -326,6 +318,7 @@ auto RNDGameState::is_pos_in_bounds(const Position &position) const noexcept -> 
 }
 
 auto RNDGameState::get_index_id(std::size_t index) const noexcept -> int {
+    assert(index < board.rows * board.cols);
     for (const auto &p : local_state.index_id_mappings) {
         if (p.index == index) {
             return p.id;
@@ -362,6 +355,7 @@ auto RNDGameState::get_agent_index() const noexcept -> std::size_t {
 }
 
 auto RNDGameState::get_hidden_item(std::size_t index) const noexcept -> HiddenCellType {
+    assert(index < board.rows * board.cols);
     return board.item(index);
 }
 
