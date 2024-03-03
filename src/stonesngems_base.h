@@ -377,8 +377,8 @@ private:
     void UpdateBombFalling(std::size_t index) noexcept;
     void UpdateExit(std::size_t index) noexcept;
     void UpdateAgent(std::size_t index, Direction direction) noexcept;
-    void UpdateFirefly(std::size_t index, Direction direction) noexcept;
-    void UpdateButterfly(std::size_t index, Direction direction) noexcept;
+    auto UpdateFirefly(std::size_t index, Direction direction) noexcept -> bool;
+    auto UpdateButterfly(std::size_t index, Direction direction) noexcept -> bool;
     void UpdateOrange(std::size_t index, Direction direction) noexcept;
     void UpdateMagicWall(std::size_t index) noexcept;
     void UpdateBlob(std::size_t index) noexcept;

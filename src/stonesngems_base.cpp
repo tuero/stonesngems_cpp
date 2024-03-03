@@ -165,9 +165,9 @@ void RNDGameState::apply_action(Action action) {
                 // NOLINTNEXTLINE(*-bounds-constant-array-index)
                 const Element &element = kCellTypeToElement[static_cast<std::size_t>(board.item(i)) + 1];
                 if (IsButterfly(element)) {
-                    UpdateButterfly(i, kButterflyToDirection.at(element));
+                    while (UpdateButterfly(i, kButterflyToDirection.at(element))) {}
                 } else if (IsFirefly(element)) {
-                    UpdateFirefly(i, kFireflyToDirection.at(element));
+                    while (UpdateFirefly(i, kFireflyToDirection.at(element))) {}
                 } else if (IsOrange(element)) {
                     UpdateOrange(i, kOrangeToDirection.at(element));
                 } else if (IsMagicWall(element)) {
@@ -833,47 +833,54 @@ void RNDGameState::UpdateAgent(std::size_t index, Direction direction) noexcept 
     }
 }
 
-void RNDGameState::UpdateFirefly(std::size_t index, Direction direction) noexcept {
+auto RNDGameState::UpdateFirefly(std::size_t index, Direction direction) noexcept -> bool {
     // NOLINTBEGIN(*-bounds-constant-array-index)
     const Direction new_dir = kRotateLeft[static_cast<std::size_t>(direction)];
     if (IsTypeAdjacent(index, kElAgent) || IsTypeAdjacent(index, kElBlob)) {
         // Explode if touching the agent/blob
         const auto it = kElementToExplosion.find(GetItem(index));
         Explode(index, (it == kElementToExplosion.end()) ? kElExplosionEmpty : it->second);
+        return false;
     } else if (IsType(index, kElEmpty, new_dir)) {
         // Fireflies always try to rotate left, otherwise continue forward
         SetItem(index, kDirectionToFirefly[static_cast<std::size_t>(new_dir)], -1);
         MoveItem(index, new_dir);
+        return false;
     } else if (IsType(index, kElEmpty, direction)) {
         SetItem(index, kDirectionToFirefly[static_cast<std::size_t>(direction)], -1);
         MoveItem(index, direction);
+        return false;
     } else {
         // No other options, rotate right
         SetItem(index, kDirectionToFirefly[static_cast<std::size_t>(kRotateRight[static_cast<std::size_t>(direction)])],
                 -1);
+        return true;
     }
-
     // NOLINTEND(*-bounds-constant-array-index)
 }
 
-void RNDGameState::UpdateButterfly(std::size_t index, Direction direction) noexcept {
+auto RNDGameState::UpdateButterfly(std::size_t index, Direction direction) noexcept -> bool {
     // NOLINTBEGIN(*-bounds-constant-array-index)
     const Direction new_dir = kRotateRight[static_cast<std::size_t>(direction)];
     if (IsTypeAdjacent(index, kElAgent) || IsTypeAdjacent(index, kElBlob)) {
         // Explode if touching the agent/blob
         const auto it = kElementToExplosion.find(GetItem(index));
         Explode(index, (it == kElementToExplosion.end()) ? kElExplosionEmpty : it->second);
+        return false;
     } else if (IsType(index, kElEmpty, new_dir)) {
         // Butterflies always try to rotate right, otherwise continue forward
         SetItem(index, kDirectionToButterfly[static_cast<std::size_t>(new_dir)], -1);
         MoveItem(index, new_dir);
+        return false;
     } else if (IsType(index, kElEmpty, direction)) {
         SetItem(index, kDirectionToButterfly[static_cast<std::size_t>(direction)], -1);
         MoveItem(index, direction);
+        return false;
     } else {
         // No other options, rotate right
         SetItem(index,
                 kDirectionToButterfly[static_cast<std::size_t>(kRotateLeft[static_cast<std::size_t>(direction)])], -1);
+        return true;
     }
     // NOLINTEND(*-bounds-constant-array-index)
 }
