@@ -183,9 +183,9 @@ void RNDGameState::apply_action(Action action) {
 }
 
 auto RNDGameState::is_terminal() const noexcept -> bool {
-    // timeout or agent is either dead/in exit
+    // timeout or agent is either dead
     const bool out_of_time = (board.max_steps > 0 && local_state.steps_remaining <= 0);
-    return out_of_time || board.agent_pos == kAgentPosExit || board.agent_pos == kAgentPosDie;
+    return out_of_time || board.agent_pos == kAgentPosDie;
 }
 
 auto RNDGameState::is_solution() const noexcept -> bool {
