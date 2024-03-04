@@ -849,9 +849,10 @@ void RNDGameState::UpdateFirefly(std::size_t index, Direction direction) noexcep
         MoveItem(index, direction);
     } else {
         // No other options, rotate right
-        const auto new_dir = kRotateRight[static_cast<std::size_t>(direction)];
-        SetItem(index, kDirectionToFirefly[static_cast<std::size_t>(new_dir)], -1);
-        MoveItem(index, new_dir);
+        // const auto new_dir = kRotateRight[static_cast<std::size_t>(direction)];
+        SetItem(index, kDirectionToFirefly[static_cast<std::size_t>(kRotateRight[static_cast<std::size_t>(direction)])],
+                -1);
+        // MoveItem(index, new_dir);
     }
     // NOLINTEND(*-bounds-constant-array-index)
 }
@@ -872,9 +873,10 @@ void RNDGameState::UpdateButterfly(std::size_t index, Direction direction) noexc
         MoveItem(index, direction);
     } else {
         // No other options, rotate left
-        const auto new_dir = kRotateLeft[static_cast<std::size_t>(direction)];
-        SetItem(index, kDirectionToButterfly[static_cast<std::size_t>(new_dir)], -1);
-        MoveItem(index, new_dir);
+        // const auto new_dir = kRotateLeft[static_cast<std::size_t>(direction)];
+        SetItem(index,
+                kDirectionToButterfly[static_cast<std::size_t>(kRotateLeft[static_cast<std::size_t>(direction)])], -1);
+        // MoveItem(index, new_dir);
     }
     // NOLINTEND(*-bounds-constant-array-index)
 }
