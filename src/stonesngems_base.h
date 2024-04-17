@@ -157,7 +157,7 @@ public:
      * Serialize the state
      * @return char vector representing state
      */
-    auto serialize() -> std::vector<uint8_t>;
+    [[nodiscard]] auto serialize() const -> std::vector<uint8_t>;
 
     /**
      * Check if the given visible element is valid.

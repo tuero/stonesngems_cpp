@@ -82,7 +82,7 @@ RNDGameState::RNDGameState(const std::vector<uint8_t> &byte_data)
     deserializer.Read(&board);
 }
 
-auto RNDGameState::serialize() -> std::vector<uint8_t> {
+auto RNDGameState::serialize() const -> std::vector<uint8_t> {
     nop::Serializer<nop::StreamWriter<std::stringstream>> serializer;
     serializer.Write(local_state);
     const SharedStateInfo &info = *shared_state_ptr;
