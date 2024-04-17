@@ -1,6 +1,8 @@
 #ifndef STONESNGEMS_BASE_H_
 #define STONESNGEMS_BASE_H_
 
+#include <nop/structure.h>
+
 #include <array>
 #include <iostream>
 #include <memory>
@@ -73,9 +75,9 @@ static const GameParameters kDefaultGameParams{
 
 // Shared global state information relevant to all states for the given game
 struct SharedStateInfo {
-    SharedStateInfo(GameParameters params_)
-        : params(std::move(params_)),
-          obs_show_ids(std::get<bool>(params.at("obs_show_ids"))),
+    SharedStateInfo() = default;
+    SharedStateInfo(GameParameters params)
+        : obs_show_ids(std::get<bool>(params.at("obs_show_ids"))),
           magic_wall_steps(std::get<int>(params.at("magic_wall_steps"))),
           blob_chance(static_cast<uint8_t>(std::get<int>(params.at("blob_chance")))),
           blob_max_percentage(std::get<float>(params.at("blob_max_percentage"))),
@@ -83,25 +85,27 @@ struct SharedStateInfo {
           game_board_str(std::get<std::string>(params.at("game_board_str"))),
           gravity(std::get<bool>(params.at("gravity"))) {}
     // NOLINTBEGIN(misc-non-private-member-variables-in-classes)
-    GameParameters params;                              // Copy of game parameters for state resetting
-    bool obs_show_ids;                                  // Flag to show object IDs (currently not used)
-    int magic_wall_steps;                               // Number of steps the magic wall stays active for
-    uint8_t blob_chance;                                // Chance (out of 256) for blob to spawn
-    int blob_max_size = 0;                              // Max blob size in terms of grid spaces
-    float blob_max_percentage;                          // Max blob size as percentage of map size
-    int rng_seed;                                       // Seed
+    bool obs_show_ids{};                                // Flag to show object IDs (currently not used)
+    int magic_wall_steps{};                             // Number of steps the magic wall stays active for
+    uint8_t blob_chance{};                              // Chance (out of 256) for blob to spawn
+    int blob_max_size{};                                // Max blob size in terms of grid spaces
+    float blob_max_percentage{};                        // Max blob size as percentage of map size
+    int rng_seed{};                                     // Seed
     std::string game_board_str;                         // String representation of the starting state
-    bool gravity;                                       // Flag if gravity is on, affects stones/gems
+    bool gravity{};                                     // Flag if gravity is on, affects stones/gems
     std::unordered_map<std::size_t, uint64_t> zrbht;    // Zobrist hashing table
-    std::vector<bool> in_bounds_board;                  // Fast check for single-step in bounds
+    std::vector<uint8_t> in_bounds_board;               // Fast check for single-step in bounds
     std::vector<std::size_t> board_to_inbounds;         // Indexing conversion for in bounds checking
     // NOLINTEND(misc-non-private-member-variables-in-classes)
+    NOP_STRUCTURE(SharedStateInfo, obs_show_ids, magic_wall_steps, blob_chance, blob_max_size, blob_max_percentage,
+                  rng_seed, game_board_str, gravity, zrbht, in_bounds_board, board_to_inbounds);
 };
 
 // Information specific for the current game state
 struct IndexId {
     std::size_t index;
     int id;
+    NOP_STRUCTURE(IndexId, index, id);
 };
 struct LocalState {
     bool operator==(const LocalState &other) const {
@@ -124,6 +128,8 @@ struct LocalState {
     bool magic_active = false;                           // Flag if magic wall is currently active
     bool blob_enclosed = true;                           // Flag if blob is enclosed
     // NOLINTEND(misc-non-private-member-variables-in-classes)
+    NOP_STRUCTURE(LocalState, index_id_mappings, random_state, reward_signal, steps_remaining, gems_collected,
+                  current_reward, magic_wall_steps, blob_size, id_state, blob_swap, magic_active, blob_enclosed);
 };
 
 // Game state
@@ -133,6 +139,12 @@ public:
 
     RNDGameState(const GameParameters &params = kDefaultGameParams);
 
+    /**
+     * Construct from byte serialization.
+     * @note this is not safe, only for internal use.
+     */
+    RNDGameState(const std::vector<uint8_t> &byte_data);
+
     auto operator==(const RNDGameState &other) const noexcept -> bool;
     auto operator!=(const RNDGameState &other) const noexcept -> bool;
 
@@ -140,6 +152,12 @@ public:
      * Reset the environment to the state as given by the GameParameters
      */
     void reset();
+
+    /**
+     * Serialize the state
+     * @return char vector representing state
+     */
+    auto serialize() -> std::vector<uint8_t>;
 
     /**
      * Check if the given visible element is valid.

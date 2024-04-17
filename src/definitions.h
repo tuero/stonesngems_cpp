@@ -1,6 +1,8 @@
 #ifndef STONESNGEMS_DEFS_H_
 #define STONESNGEMS_DEFS_H_
 
+#include <nop/structure.h>
+
 #include <array>
 #include <cassert>
 #include <cstdint>
@@ -247,8 +249,9 @@ struct Board {
     int max_steps = -1;
     int gems_required = -1;
     std::vector<HiddenCellType> grid;
-    std::vector<bool> has_updated;
+    std::vector<uint8_t> has_updated;
     // NOLINTEND(misc-non-private-member-variables-in-classes)
+    NOP_STRUCTURE(Board, zorb_hash, rows, cols, agent_pos, agent_idx, max_steps, gems_required, grid, has_updated);
 };
 
 }    // namespace stonesngems

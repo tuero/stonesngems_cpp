@@ -18,3 +18,6 @@ add_executable(sng_test_indices test_find_indices.cpp)
 target_link_libraries(sng_test_indices PUBLIC stonesngems)
 add_test(sng_test_indices sng_test_indices)
 
+add_executable(sng_test_serialization test_serialization.cpp)
+target_link_libraries(sng_test_serialization PUBLIC stonesngems)
+add_test(sng_test_serialization sng_test_serialization)

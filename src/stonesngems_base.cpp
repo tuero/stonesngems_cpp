@@ -1,9 +1,16 @@
 #include "stonesngems_base.h"
 
+#include <nop/serializer.h>
+#include <nop/utility/buffer_reader.h>
+#include <nop/utility/buffer_writer.h>
+#include <nop/utility/stream_reader.h>
+#include <nop/utility/stream_writer.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <random>
+#include <sstream>
 
 #include "definitions.h"
 #include "util.h"
@@ -63,6 +70,39 @@ auto xorshift64(uint64_t &s) noexcept -> uint64_t {
     return x;
 }
 // NOLINTEND
+
+RNDGameState::RNDGameState(const std::vector<uint8_t> &byte_data)
+    : shared_state_ptr(std::make_shared<SharedStateInfo>()) {
+    std::stringstream ss;
+    ss.write((char const *)byte_data.data(), std::streamsize(byte_data.size()));    // NOLINT(*cstyle-cast)
+    nop::Deserializer<nop::StreamReader<std::stringstream>> deserializer{std::move(ss)};
+    deserializer.Read(&local_state);
+    SharedStateInfo &info = *shared_state_ptr;
+    deserializer.Read(&info);
+    deserializer.Read(&board);
+}
+
+auto RNDGameState::serialize() -> std::vector<uint8_t> {
+    nop::Serializer<nop::StreamWriter<std::stringstream>> serializer;
+    serializer.Write(local_state);
+    const SharedStateInfo &info = *shared_state_ptr;
+    serializer.Write(info);
+    serializer.Write(board);
+    auto &ss = serializer.writer().stream();
+    // discover size of data in stream
+    ss.seekg(0, std::ios::beg);
+    auto bof = ss.tellg();
+    ss.seekg(0, std::ios::end);
+    auto stream_size = std::size_t(ss.tellg() - bof);
+    ss.seekg(0, std::ios::beg);
+
+    // make your vector long enough
+    std::vector<uint8_t> byte_data(stream_size);
+
+    // read directly in
+    ss.read((char *)byte_data.data(), std::streamsize(byte_data.size()));    // NOLINT(*cstyle-cast)
+    return byte_data;
+}
 
 void RNDGameState::reset() {
     // Board, local, and shared state info
@@ -584,7 +624,7 @@ void RNDGameState::MoveThroughMagic(std::size_t index, const Element &element) n
     }
 }
 
-// NOLINTNEXTLINE (misc-no-recursion)
+// NOLINTNEXTLINE (mi-no-recursion)
 void RNDGameState::Explode(std::size_t index, const Element &element, Direction direction) noexcept {
     const std::size_t new_index = IndexFromDirection(index, direction);
     const auto it = kElementToExplosion.find(GetItem(new_index));
