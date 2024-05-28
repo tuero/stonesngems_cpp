@@ -7,10 +7,20 @@
 #include <nop/utility/stream_writer.h>
 
 #include <algorithm>
+#include <array>
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
+#include <iostream>
+#include <iterator>
+#include <limits>
+#include <memory>
 #include <random>
 #include <sstream>
+#include <string>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
 #include "definitions.h"
 #include "util.h"
@@ -114,6 +124,7 @@ void RNDGameState::reset() {
         static_cast<int>(static_cast<float>(board.cols * board.rows) * shared_state_ptr->blob_max_percentage);
 
     // Set the item IDs
+    local_state.index_id_mappings.clear();
     for (std::size_t i = 0; i < board.cols * board.rows; ++i) {
         AddIndexID(i);
     }
@@ -512,7 +523,7 @@ void RNDGameState::AddIndexID(std::size_t index) noexcept {
         case HiddenCellType::kDiamondFalling:
         case HiddenCellType::kNut:
         case HiddenCellType::kNutFalling: {
-            local_state.index_id_mappings.emplace_back(index, ++local_state.id_state);
+            local_state.index_id_mappings.push_back({index, ++local_state.id_state});
             break;
         }
         default:
@@ -521,7 +532,11 @@ void RNDGameState::AddIndexID(std::size_t index) noexcept {
 }
 
 void RNDGameState::RemoveIndexID(std::size_t index) noexcept {
-    std::erase_if(local_state.index_id_mappings, [&](const auto &p) -> bool { return p.index == index; });
+    local_state.index_id_mappings.erase(
+        std::remove_if(local_state.index_id_mappings.begin(), local_state.index_id_mappings.end(),
+                       [&](const auto &p) -> bool { return p.index == index; }),
+        local_state.index_id_mappings.end());
+    // std::erase_if(local_state.index_id_mappings, [&](const auto &p) -> bool { return p.index == index; });
 }
 
 void RNDGameState::MoveItem(std::size_t index, Direction direction) noexcept {

@@ -4,12 +4,16 @@
 #include <nop/structure.h>
 
 #include <array>
+#include <cstddef>
+#include <cstdint>
 #include <iostream>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <variant>
+#include <vector>
 
 #include "definitions.h"
 
