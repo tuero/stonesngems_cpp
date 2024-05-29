@@ -102,7 +102,7 @@ struct SharedStateInfo {
     std::vector<std::size_t> board_to_inbounds;         // Indexing conversion for in bounds checking
     // NOLINTEND(misc-non-private-member-variables-in-classes)
     NOP_STRUCTURE(SharedStateInfo, obs_show_ids, magic_wall_steps, blob_chance, blob_max_size, blob_max_percentage,
-                  rng_seed, game_board_str, gravity, zrbht, in_bounds_board, board_to_inbounds);
+                  rng_seed, game_board_str, gravity, in_bounds_board, board_to_inbounds);
 };
 
 // Information specific for the current game state
@@ -406,6 +406,7 @@ private:
     void UpdateBlob(std::size_t index) noexcept;
     void UpdateExplosions(std::size_t index) noexcept;
     void OpenGate(const Element &element) noexcept;
+    void InitZrbhtTable() noexcept;
 
     void StartScan() noexcept;
     void EndScan() noexcept;

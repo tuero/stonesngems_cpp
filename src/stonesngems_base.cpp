@@ -84,12 +84,13 @@ auto xorshift64(uint64_t &s) noexcept -> uint64_t {
 RNDGameState::RNDGameState(const std::vector<uint8_t> &byte_data)
     : shared_state_ptr(std::make_shared<SharedStateInfo>()) {
     std::stringstream ss;
-    ss.write((char const *)byte_data.data(), std::streamsize(byte_data.size()));    // NOLINT(*cstyle-cast)
+    ss.write(reinterpret_cast<char const *>(byte_data.data()), std::streamsize(byte_data.size()));
     nop::Deserializer<nop::StreamReader<std::stringstream>> deserializer{std::move(ss)};
     deserializer.Read(&local_state);
     SharedStateInfo &info = *shared_state_ptr;
     deserializer.Read(&info);
     deserializer.Read(&board);
+    InitZrbhtTable();
 }
 
 auto RNDGameState::serialize() const -> std::vector<uint8_t> {
@@ -110,8 +111,19 @@ auto RNDGameState::serialize() const -> std::vector<uint8_t> {
     std::vector<uint8_t> byte_data(stream_size);
 
     // read directly in
-    ss.read((char *)byte_data.data(), std::streamsize(byte_data.size()));    // NOLINT(*cstyle-cast)
+    ss.read(reinterpret_cast<char *>(byte_data.data()), std::streamsize(byte_data.size()));
     return byte_data;
+}
+
+void RNDGameState::InitZrbhtTable() noexcept {
+    // zorbist hashing
+    std::mt19937 gen(static_cast<unsigned long>(shared_state_ptr->rng_seed));
+    std::uniform_int_distribution<uint64_t> dist(0);
+    for (std::size_t channel = 0; channel < kNumHiddenCellType; ++channel) {
+        for (std::size_t i = 0; i < board.cols * board.rows; ++i) {
+            shared_state_ptr->zrbht[(channel * board.cols * board.rows) + i] = dist(gen);
+        }
+    }
 }
 
 void RNDGameState::reset() {
@@ -130,13 +142,7 @@ void RNDGameState::reset() {
     }
 
     // zorbist hashing
-    std::mt19937 gen(static_cast<unsigned long>(shared_state_ptr->rng_seed));
-    std::uniform_int_distribution<uint64_t> dist(0);
-    for (std::size_t channel = 0; channel < kNumHiddenCellType; ++channel) {
-        for (std::size_t i = 0; i < board.cols * board.rows; ++i) {
-            shared_state_ptr->zrbht[(channel * board.cols * board.rows) + i] = dist(gen);
-        }
-    }
+    InitZrbhtTable();
 
     // Set initial hash
     for (std::size_t i = 0; i < board.cols * board.rows; ++i) {
