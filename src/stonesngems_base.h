@@ -61,6 +61,7 @@ const std::string DEFAULT_GAME_BOARD_STR =
     "02|02|03|02|02|02|03|02|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|19|"
     "19|19|19|19|19|19|19|19|19|19|19";
 constexpr bool DEFAULT_GRAVITY = true;
+constexpr bool DEFAULT_DISABLE_EXPLOSIONS = false;
 constexpr int DEFAULT_BLOB_SWAP = -1;
 
 static const GameParameters kDefaultGameParams{
@@ -71,10 +72,11 @@ static const GameParameters kDefaultGameParams{
     {"blob_max_percentage",
      GameParameter(
          DEFAULT_BLOB_MAX_PERCENTAGE)},    // Max number of blobs before they collapse (percentage of map size)
-    {"rng_seed", GameParameter(DEFAULT_RNG_SEED)},                // Seed for anything that uses the rng
-    {"game_board_str", GameParameter(DEFAULT_GAME_BOARD_STR)},    // Game board string
-    {"gravity", GameParameter(DEFAULT_GRAVITY)},                  // Game board string
-    {"blob_swap", GameParameter(DEFAULT_BLOB_SWAP)},              // Blob swap hidden element
+    {"rng_seed", GameParameter(DEFAULT_RNG_SEED)},                        // Seed for anything that uses the rng
+    {"game_board_str", GameParameter(DEFAULT_GAME_BOARD_STR)},            // Game board string
+    {"gravity", GameParameter(DEFAULT_GRAVITY)},                          // Game board string
+    {"blob_swap", GameParameter(DEFAULT_BLOB_SWAP)},                      // Blob swap hidden element
+    {"disable_explosions", GameParameter(DEFAULT_DISABLE_EXPLOSIONS)},    // Blob swap hidden element
 };
 
 // Shared global state information relevant to all states for the given game
@@ -87,7 +89,8 @@ struct SharedStateInfo {
           blob_max_percentage(std::get<float>(params.at("blob_max_percentage"))),
           rng_seed(std::get<int>(params.at("rng_seed"))),
           game_board_str(std::get<std::string>(params.at("game_board_str"))),
-          gravity(std::get<bool>(params.at("gravity"))) {}
+          gravity(std::get<bool>(params.at("gravity"))),
+          disable_explosions(std::get<bool>(params.at("disable_explosions"))) {}
     // NOLINTBEGIN(misc-non-private-member-variables-in-classes)
     bool obs_show_ids{};                                // Flag to show object IDs (currently not used)
     int magic_wall_steps{};                             // Number of steps the magic wall stays active for
@@ -97,6 +100,7 @@ struct SharedStateInfo {
     int rng_seed{};                                     // Seed
     std::string game_board_str;                         // String representation of the starting state
     bool gravity{};                                     // Flag if gravity is on, affects stones/gems
+    bool disable_explosions = false;                    // Flag if explosions are disabled, affects bombs
     std::unordered_map<std::size_t, uint64_t> zrbht;    // Zobrist hashing table
     std::vector<uint8_t> in_bounds_board;               // Fast check for single-step in bounds
     std::vector<std::size_t> board_to_inbounds;         // Indexing conversion for in bounds checking
@@ -377,8 +381,8 @@ private:
     void RemoveIndexID(std::size_t index) noexcept;
     void MoveItem(std::size_t index, Direction direction) noexcept;
     void SetItem(std::size_t index, const Element &element, int id, Direction direction = Direction::kNoop) noexcept;
-    [[nodiscard]] auto GetItem(std::size_t index,
-                               Direction direction = Direction::kNoop) const noexcept -> const Element &;
+    [[nodiscard]] auto GetItem(std::size_t index, Direction direction = Direction::kNoop) const noexcept
+        -> const Element &;
     [[nodiscard]] auto IsTypeAdjacent(std::size_t index, const Element &element) const noexcept -> bool;
 
     [[nodiscard]] auto CanRollLeft(std::size_t index) const noexcept -> bool;

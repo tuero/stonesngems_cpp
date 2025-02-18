@@ -815,7 +815,7 @@ void RNDGameState::UpdateBombFalling(std::size_t index) noexcept {
         RollLeft(index, kElBombFalling);
     } else if (CanRollRight(index)) {
         RollRight(index, kElBombFalling);
-    } else {
+    } else if (!shared_state_ptr->disable_explosions) {
         // Default options is for bomb to explode if stopped falling
         const auto it = kElementToExplosion.find(GetItem(index));
         Explode(index, (it == kElementToExplosion.end()) ? kElExplosionEmpty : it->second);
