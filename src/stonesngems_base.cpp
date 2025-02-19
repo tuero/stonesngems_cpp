@@ -718,6 +718,7 @@ void RNDGameState::UpdateStoneFalling(std::size_t index) noexcept {
         // Falling on a nut, crack it open to reveal a diamond!
         SetItem(index, kElDiamond, -1, Direction::kDown);
         UpdateIndexID(IndexFromDirection(index, Direction::kDown));
+        local_state.reward_signal |= RewardCodes::kRewardNutToDiamond;
     } else if (IsType(index, kElNut, Direction::kDown)) {
         // Falling on a bomb, explode!
         const auto it = kElementToExplosion.find(GetItem(index));
