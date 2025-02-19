@@ -336,6 +336,18 @@ auto RNDGameState::board_to_str() const noexcept -> std::string {
     return ::stonesngems::board_to_str(board);
 }
 
+auto RNDGameState::params_to_str() const noexcept -> std::string {
+    std::stringstream ss;
+    ss << "obs_show_ids: " << shared_state_ptr->obs_show_ids << "\n";
+    ss << "magic_wall_steps: " << shared_state_ptr->magic_wall_steps << "\n";
+    ss << "blob_chance: " << shared_state_ptr->blob_chance << "\n";
+    ss << "blob_max_size: " << shared_state_ptr->blob_max_size << "\n";
+    ss << "rng_seed: " << shared_state_ptr->rng_seed << "\n";
+    ss << "gravity: " << shared_state_ptr->gravity << "\n";
+    ss << "disable_explosions: " << shared_state_ptr->disable_explosions << "\n";
+    return ss.str();
+}
+
 auto RNDGameState::get_reward_signal() const noexcept -> uint64_t {
     return local_state.reward_signal;
 }

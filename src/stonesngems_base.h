@@ -293,6 +293,11 @@ public:
     [[nodiscard]] auto board_to_str() const noexcept -> std::string;
 
     /**
+     * Get string representation of the game params
+     */
+    [[nodiscard]] auto params_to_str() const noexcept -> std::string;
+
+    /**
      * Get the current reward signal as a result of the previous action taken.
      * @return bit field representing events that occured
      */
