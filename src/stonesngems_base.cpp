@@ -340,7 +340,7 @@ auto RNDGameState::params_to_str() const noexcept -> std::string {
     std::stringstream ss;
     ss << "obs_show_ids: " << shared_state_ptr->obs_show_ids << "\n";
     ss << "magic_wall_steps: " << shared_state_ptr->magic_wall_steps << "\n";
-    ss << "blob_chance: " << shared_state_ptr->blob_chance << "\n";
+    ss << "blob_chance: " << static_cast<int>(shared_state_ptr->blob_chance) << "\n";
     ss << "blob_max_size: " << shared_state_ptr->blob_max_size << "\n";
     ss << "rng_seed: " << shared_state_ptr->rng_seed << "\n";
     ss << "gravity: " << shared_state_ptr->gravity << "\n";
