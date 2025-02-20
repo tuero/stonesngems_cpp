@@ -62,7 +62,8 @@ const std::string DEFAULT_GAME_BOARD_STR =
     "19|19|19|19|19|19|19|19|19|19|19";
 constexpr bool DEFAULT_GRAVITY = true;
 constexpr bool DEFAULT_DISABLE_EXPLOSIONS = false;
-constexpr int DEFAULT_BUTTERFLY_EXPLOSION_VER = 1;
+constexpr int DEFAULT_BUTTERFLY_EXPLOSION_VER = ButterflyExplosionVersion::kExplode;
+constexpr int DEFAULT_BUTTERFLY_MOVE_VER = ButterflyMoveVersion::kDelay;
 constexpr int DEFAULT_BLOB_SWAP = -1;
 
 static const GameParameters kDefaultGameParams{
@@ -79,6 +80,7 @@ static const GameParameters kDefaultGameParams{
     {"blob_swap", GameParameter(DEFAULT_BLOB_SWAP)},                      // Blob swap hidden element
     {"disable_explosions", GameParameter(DEFAULT_DISABLE_EXPLOSIONS)},    // Blob swap hidden element
     {"butterfly_explosion_ver", GameParameter(DEFAULT_BUTTERFLY_EXPLOSION_VER)},    // Butterfly explosion or convert
+    {"butterfly_explosion_ver", GameParameter(DEFAULT_BUTTERFLY_EXPLOSION_VER)},    // Butterfly explosion or convert
 };
 
 // Shared global state information relevant to all states for the given game
@@ -94,7 +96,8 @@ struct SharedStateInfo {
           gravity(std::get<bool>(params.at("gravity"))),
           disable_explosions(std::get<bool>(params.at("disable_explosions"))),
           butterfly_explosion_ver(
-              static_cast<ButterflyExplosionVersion>(std::get<int>(params.at("butterfly_explosion_ver")))) {}
+              static_cast<ButterflyExplosionVersion>(std::get<int>(params.at("butterfly_explosion_ver")))),
+          butterfly_move_ver(static_cast<ButterflyMoveVersion>(std::get<int>(params.at("butterfly_move_ver")))) {}
     // NOLINTBEGIN(misc-non-private-member-variables-in-classes)
     bool obs_show_ids{};                // Flag to show object IDs (currently not used)
     int magic_wall_steps{};             // Number of steps the magic wall stays active for
@@ -105,13 +108,15 @@ struct SharedStateInfo {
     std::string game_board_str;         // String representation of the starting state
     bool gravity{};                     // Flag if gravity is on, affects stones/gems
     bool disable_explosions = false;    // Flag if explosions are disabled, affects bombs
-    ButterflyExplosionVersion butterfly_explosion_ver = ButterflyExplosionVersion::kExplode;
+    int butterfly_explosion_ver = ButterflyExplosionVersion::kExplode;
+    int butterfly_move_ver = ButterflyMoveVersion::kDelay;
     std::unordered_map<std::size_t, uint64_t> zrbht;    // Zobrist hashing table
     std::vector<uint8_t> in_bounds_board;               // Fast check for single-step in bounds
     std::vector<std::size_t> board_to_inbounds;         // Indexing conversion for in bounds checking
     // NOLINTEND(misc-non-private-member-variables-in-classes)
     NOP_STRUCTURE(SharedStateInfo, obs_show_ids, magic_wall_steps, blob_chance, blob_max_size, blob_max_percentage,
-                  rng_seed, game_board_str, gravity, in_bounds_board, board_to_inbounds);
+                  rng_seed, game_board_str, gravity, disable_explosions, butterfly_explosion_ver, butterfly_move_ver,
+                  in_bounds_board, board_to_inbounds);
 };
 
 // Information specific for the current game state

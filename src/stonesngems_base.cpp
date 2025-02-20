@@ -345,7 +345,8 @@ auto RNDGameState::params_to_str() const noexcept -> std::string {
     ss << "rng_seed: " << shared_state_ptr->rng_seed << "\n";
     ss << "gravity: " << shared_state_ptr->gravity << "\n";
     ss << "disable_explosions: " << shared_state_ptr->disable_explosions << "\n";
-    ss << "butterfly_explosion_ver: " << static_cast<int>(shared_state_ptr->butterfly_explosion_ver) << "\n";
+    ss << "butterfly_explosion_ver: " << shared_state_ptr->butterfly_explosion_ver << "\n";
+    ss << "butterfly_move_ver: " << shared_state_ptr->butterfly_move_ver << "\n";
     return ss.str();
 }
 
@@ -955,10 +956,12 @@ void RNDGameState::UpdateButterfly(std::size_t index, Direction direction) noexc
         MoveItem(index, direction);
     } else {
         // No other options, rotate left
-        // const auto new_dir = kRotateLeft[static_cast<std::size_t>(direction)];
         SetItem(index,
                 kDirectionToButterfly[static_cast<std::size_t>(kRotateLeft[static_cast<std::size_t>(direction)])], -1);
-        // MoveItem(index, new_dir);
+        if (shared_state_ptr->butterfly_move_ver == ButterflyMoveVersion::kInstant) {
+            const auto new_dir = kRotateLeft[static_cast<std::size_t>(direction)];
+            MoveItem(index, new_dir);
+        }
     }
     // NOLINTEND(*-bounds-constant-array-index)
 }

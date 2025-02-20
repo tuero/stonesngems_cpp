@@ -162,9 +162,13 @@ enum RewardCodes : uint64_t {
     kRewardWalkThroughGateYellow = 1 << 14,
 };
 
-enum class ButterflyExplosionVersion : int {
-    kExplode = 1,
-    kConvert = 2,
+enum ButterflyExplosionVersion : int {
+    kExplode = 1,    // Explode when being hit by stone
+    kConvert = 2,    // Convert to diamong when being hit by stone
+};
+enum ButterflyMoveVersion : int {
+    kDelay = 1,      // Delay a game tick between transitioning directions
+    kInstant = 2,    // Move instantly after changing directions
 };
 
 constexpr std::size_t kAgentPosExit = std::numeric_limits<std::size_t>::max();
