@@ -548,6 +548,11 @@ const std::unordered_map<Element, Element, ElementHash> kExplosionToElement{
     {kElExplosionBoulder, kElStone},
     {kElExplosionEmpty, kElEmpty},
 };
+const std::unordered_map<Element, RewardCodes, ElementHash> kExplosionToReward{
+    {kElExplosionDiamond, kRewardButterflyToDiamond},
+    {kElExplosionBoulder, kRewardNone},
+    {kElExplosionEmpty, kRewardNone},
+};
 
 // Magic wall conversion map
 const std::unordered_map<Element, Element, ElementHash> kMagicWallConversion{

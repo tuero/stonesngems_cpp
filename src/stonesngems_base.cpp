@@ -345,6 +345,7 @@ auto RNDGameState::params_to_str() const noexcept -> std::string {
     ss << "rng_seed: " << shared_state_ptr->rng_seed << "\n";
     ss << "gravity: " << shared_state_ptr->gravity << "\n";
     ss << "disable_explosions: " << shared_state_ptr->disable_explosions << "\n";
+    ss << "butterfly_explosion_ver: " << static_cast<int>(shared_state_ptr->butterfly_explosion_ver) << "\n";
     return ss.str();
 }
 
@@ -707,6 +708,12 @@ void RNDGameState::UpdateStoneFalling(std::size_t index) noexcept {
     // Continue to fall as normal
     if (IsType(index, kElEmpty, Direction::kDown)) {
         MoveItem(index, Direction::kDown);
+    } else if (shared_state_ptr->butterfly_explosion_ver == ButterflyExplosionVersion::kConvert &&
+               IsButterfly(GetItem(index, Direction::kDown))) {
+        // Falling on a butterfly, destroy it open to reveal a diamond!
+        SetItem(index, kElDiamond, -1, Direction::kDown);
+        UpdateIndexID(IndexFromDirection(index, Direction::kDown));
+        local_state.reward_signal |= RewardCodes::kRewardButterflyToDiamond;
     } else if (HasProperty(index, ElementProperties::kCanExplode, Direction::kDown)) {
         // Falling stones can cause elements to explode
         const auto it = kElementToExplosion.find(GetItem(index, Direction::kDown));
@@ -719,7 +726,7 @@ void RNDGameState::UpdateStoneFalling(std::size_t index) noexcept {
         SetItem(index, kElDiamond, -1, Direction::kDown);
         UpdateIndexID(IndexFromDirection(index, Direction::kDown));
         local_state.reward_signal |= RewardCodes::kRewardNutToDiamond;
-    } else if (IsType(index, kElNut, Direction::kDown)) {
+    } else if (IsType(index, kElBomb, Direction::kDown)) {
         // Falling on a bomb, explode!
         const auto it = kElementToExplosion.find(GetItem(index));
         Explode(index, (it == kElementToExplosion.end()) ? kElExplosionEmpty : it->second);
@@ -1021,6 +1028,7 @@ void RNDGameState::UpdateBlob(std::size_t index) noexcept {
 }
 
 void RNDGameState::UpdateExplosions(std::size_t index) noexcept {
+    local_state.reward_signal |= kExplosionToReward.at(GetItem(index));
     SetItem(index, kExplosionToElement.at(GetItem(index)), -1);
     AddIndexID(index);
 }

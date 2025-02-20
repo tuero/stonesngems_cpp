@@ -144,20 +144,27 @@ constexpr int kNumDirections = 9;
 }
 
 enum RewardCodes : uint64_t {
+    kRewardNone = 0,
     kRewardAgentDies = 1 << 0,
     kRewardCollectDiamond = 1 << 1,
     kRewardWalkThroughExit = 1 << 2,
     kRewardNutToDiamond = 1 << 3,
-    kRewardCollectKey = 1 << 4,
-    kRewardCollectKeyRed = 1 << 5,
-    kRewardCollectKeyBlue = 1 << 6,
-    kRewardCollectKeyGreen = 1 << 7,
-    kRewardCollectKeyYellow = 1 << 8,
-    kRewardWalkThroughGate = 1 << 9,
-    kRewardWalkThroughGateRed = 1 << 10,
-    kRewardWalkThroughGateBlue = 1 << 11,
-    kRewardWalkThroughGateGreen = 1 << 12,
-    kRewardWalkThroughGateYellow = 1 << 13,
+    kRewardButterflyToDiamond = 1 << 4,
+    kRewardCollectKey = 1 << 5,
+    kRewardCollectKeyRed = 1 << 6,
+    kRewardCollectKeyBlue = 1 << 7,
+    kRewardCollectKeyGreen = 1 << 8,
+    kRewardCollectKeyYellow = 1 << 9,
+    kRewardWalkThroughGate = 1 << 10,
+    kRewardWalkThroughGateRed = 1 << 11,
+    kRewardWalkThroughGateBlue = 1 << 12,
+    kRewardWalkThroughGateGreen = 1 << 13,
+    kRewardWalkThroughGateYellow = 1 << 14,
+};
+
+enum class ButterflyExplosionVersion : int {
+    kExplode = 1,
+    kConvert = 2,
 };
 
 constexpr std::size_t kAgentPosExit = std::numeric_limits<std::size_t>::max();

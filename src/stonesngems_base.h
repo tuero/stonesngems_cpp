@@ -62,6 +62,7 @@ const std::string DEFAULT_GAME_BOARD_STR =
     "19|19|19|19|19|19|19|19|19|19|19";
 constexpr bool DEFAULT_GRAVITY = true;
 constexpr bool DEFAULT_DISABLE_EXPLOSIONS = false;
+constexpr int DEFAULT_BUTTERFLY_EXPLOSION_VER = 1;
 constexpr int DEFAULT_BLOB_SWAP = -1;
 
 static const GameParameters kDefaultGameParams{
@@ -77,6 +78,7 @@ static const GameParameters kDefaultGameParams{
     {"gravity", GameParameter(DEFAULT_GRAVITY)},                          // Game board string
     {"blob_swap", GameParameter(DEFAULT_BLOB_SWAP)},                      // Blob swap hidden element
     {"disable_explosions", GameParameter(DEFAULT_DISABLE_EXPLOSIONS)},    // Blob swap hidden element
+    {"butterfly_explosion_ver", GameParameter(DEFAULT_BUTTERFLY_EXPLOSION_VER)},    // Butterfly explosion or convert
 };
 
 // Shared global state information relevant to all states for the given game
@@ -90,17 +92,20 @@ struct SharedStateInfo {
           rng_seed(std::get<int>(params.at("rng_seed"))),
           game_board_str(std::get<std::string>(params.at("game_board_str"))),
           gravity(std::get<bool>(params.at("gravity"))),
-          disable_explosions(std::get<bool>(params.at("disable_explosions"))) {}
+          disable_explosions(std::get<bool>(params.at("disable_explosions"))),
+          butterfly_explosion_ver(
+              static_cast<ButterflyExplosionVersion>(std::get<int>(params.at("butterfly_explosion_ver")))) {}
     // NOLINTBEGIN(misc-non-private-member-variables-in-classes)
-    bool obs_show_ids{};                                // Flag to show object IDs (currently not used)
-    int magic_wall_steps{};                             // Number of steps the magic wall stays active for
-    uint8_t blob_chance{};                              // Chance (out of 256) for blob to spawn
-    int blob_max_size{};                                // Max blob size in terms of grid spaces
-    float blob_max_percentage{};                        // Max blob size as percentage of map size
-    int rng_seed{};                                     // Seed
-    std::string game_board_str;                         // String representation of the starting state
-    bool gravity{};                                     // Flag if gravity is on, affects stones/gems
-    bool disable_explosions = false;                    // Flag if explosions are disabled, affects bombs
+    bool obs_show_ids{};                // Flag to show object IDs (currently not used)
+    int magic_wall_steps{};             // Number of steps the magic wall stays active for
+    uint8_t blob_chance{};              // Chance (out of 256) for blob to spawn
+    int blob_max_size{};                // Max blob size in terms of grid spaces
+    float blob_max_percentage{};        // Max blob size as percentage of map size
+    int rng_seed{};                     // Seed
+    std::string game_board_str;         // String representation of the starting state
+    bool gravity{};                     // Flag if gravity is on, affects stones/gems
+    bool disable_explosions = false;    // Flag if explosions are disabled, affects bombs
+    ButterflyExplosionVersion butterfly_explosion_ver = ButterflyExplosionVersion::kExplode;
     std::unordered_map<std::size_t, uint64_t> zrbht;    // Zobrist hashing table
     std::vector<uint8_t> in_bounds_board;               // Fast check for single-step in bounds
     std::vector<std::size_t> board_to_inbounds;         // Indexing conversion for in bounds checking
