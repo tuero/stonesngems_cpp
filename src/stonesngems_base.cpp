@@ -711,6 +711,7 @@ void RNDGameState::UpdateStoneFalling(std::size_t index) noexcept {
     } else if (shared_state_ptr->butterfly_explosion_ver == ButterflyExplosionVersion::kConvert &&
                IsButterfly(GetItem(index, Direction::kDown))) {
         // Falling on a butterfly, destroy it open to reveal a diamond!
+        SetItem(index, kElEmpty, -1);
         SetItem(index, kElDiamond, -1, Direction::kDown);
         UpdateIndexID(IndexFromDirection(index, Direction::kDown));
         local_state.reward_signal |= RewardCodes::kRewardButterflyToDiamond;
