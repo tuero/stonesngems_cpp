@@ -80,7 +80,7 @@ static const GameParameters kDefaultGameParams{
     {"blob_swap", GameParameter(DEFAULT_BLOB_SWAP)},                      // Blob swap hidden element
     {"disable_explosions", GameParameter(DEFAULT_DISABLE_EXPLOSIONS)},    // Blob swap hidden element
     {"butterfly_explosion_ver", GameParameter(DEFAULT_BUTTERFLY_EXPLOSION_VER)},    // Butterfly explosion or convert
-    {"butterfly_explosion_ver", GameParameter(DEFAULT_BUTTERFLY_EXPLOSION_VER)},    // Butterfly explosion or convert
+    {"butterfly_move_ver", GameParameter(DEFAULT_BUTTERFLY_MOVE_VER)},              // Butterfly move instant or delay
 };
 
 // Shared global state information relevant to all states for the given game
