@@ -76,9 +76,9 @@ static const GameParameters kDefaultGameParams{
          DEFAULT_BLOB_MAX_PERCENTAGE)},    // Max number of blobs before they collapse (percentage of map size)
     {"rng_seed", GameParameter(DEFAULT_RNG_SEED)},                        // Seed for anything that uses the rng
     {"game_board_str", GameParameter(DEFAULT_GAME_BOARD_STR)},            // Game board string
-    {"gravity", GameParameter(DEFAULT_GRAVITY)},                          // Game board string
+    {"gravity", GameParameter(DEFAULT_GRAVITY)},                          // Flag to use gravity or not
     {"blob_swap", GameParameter(DEFAULT_BLOB_SWAP)},                      // Blob swap hidden element
-    {"disable_explosions", GameParameter(DEFAULT_DISABLE_EXPLOSIONS)},    // Blob swap hidden element
+    {"disable_explosions", GameParameter(DEFAULT_DISABLE_EXPLOSIONS)},    // Flag to disable explosions
     {"butterfly_explosion_ver", GameParameter(DEFAULT_BUTTERFLY_EXPLOSION_VER)},    // Butterfly explosion or convert
     {"butterfly_move_ver", GameParameter(DEFAULT_BUTTERFLY_MOVE_VER)},              // Butterfly move instant or delay
 };

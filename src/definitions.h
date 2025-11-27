@@ -164,7 +164,7 @@ enum RewardCodes : uint64_t {
 
 enum ButterflyExplosionVersion : int {
     kExplode = 1,    // Explode when being hit by stone
-    kConvert = 2,    // Convert to diamong when being hit by stone
+    kConvert = 2,    // Convert to diamond when being hit by stone
 };
 enum ButterflyMoveVersion : int {
     kDelay = 1,      // Delay a game tick between transitioning directions
