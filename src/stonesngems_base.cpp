@@ -174,6 +174,12 @@ void RNDGameState::reset() {
 
 void RNDGameState::apply_action(Action action) {
     assert(is_valid_action(action));
+
+    // Do nothing if game is already over
+    if (is_terminal() || is_solution()) {
+        return;
+    }
+
     StartScan();
 
     // Handle agent first

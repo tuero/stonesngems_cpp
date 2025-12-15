@@ -211,7 +211,7 @@ public:
     void apply_action(Action action);
 
     /**
-     * Check if the state is terminal, meaning either solution, timeout, or agent dies.
+     * Check if the state is terminal, meaning either timeout or agent dies.
      * @return True if terminal, false otherwise
      */
     [[nodiscard]] auto is_terminal() const noexcept -> bool;
