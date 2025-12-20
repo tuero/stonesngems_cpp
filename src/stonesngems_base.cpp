@@ -1,11 +1,5 @@
 #include "stonesngems_base.h"
 
-#include <nop/serializer.h>
-#include <nop/utility/buffer_reader.h>
-#include <nop/utility/buffer_writer.h>
-#include <nop/utility/stream_reader.h>
-#include <nop/utility/stream_writer.h>
-
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -22,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "cista.h"
 #include "definitions.h"
 #include "util.h"
 
@@ -81,37 +76,147 @@ auto xorshift64(uint64_t &s) noexcept -> uint64_t {
 }
 // NOLINTEND
 
+struct MetaBoard {
+    uint64_t zorb_hash;
+    std::size_t rows;
+    std::size_t cols;
+    std::size_t agent_pos;
+    std::size_t agent_idx;
+    int max_steps;
+    int gems_required;
+    cista::raw::vector<HiddenCellType> grid;
+    cista::raw::vector<uint8_t> has_updated;
+};
+struct MetaLocalState {
+    cista::raw::vector<IndexId> index_id_mappings;
+    uint64_t random_state;       // State of Xorshift rng
+    uint64_t reward_signal;      // Signal for external information about events
+    int steps_remaining;         // Number of steps remaining (if timeout set)
+    int gems_collected;          // Number of gems collected
+    int current_reward;          // Reward for the current game state
+    int magic_wall_steps;        // Number of steps remaining for the magic wall
+    int blob_size;               // Current size of the blob
+    int id_state;                // Current ID state
+    HiddenCellType blob_swap;    // Swap element when the blob vanishes
+    bool magic_active;           // Flag if magic wall is currently active
+    bool blob_enclosed;          // Flag if blob is enclosed
+};
+struct MetaSharedState {
+    bool obs_show_ids;                    // Flag to show object IDs (currently not used)
+    int magic_wall_steps;                 // Number of steps the magic wall stays active for
+    uint8_t blob_chance;                  // Chance (out of 256) for blob to spawn
+    int blob_max_size;                    // Max blob size in terms of grid spaces
+    float blob_max_percentage;            // Max blob size as percentage of map size
+    int rng_seed;                         // Seed
+    cista::raw::string game_board_str;    // String representation of the starting state
+    bool gravity;                         // Flag if gravity is on, affects stones/gems
+    bool disable_explosions;              // Flag if explosions are disabled, affects bombs
+    int butterfly_explosion_ver;
+    int butterfly_move_ver;
+    cista::raw::vector<uint8_t> in_bounds_board;          // Fast check for single-step in bounds
+    cista::raw::vector<std::size_t> board_to_inbounds;    // Indexing conversion for in bounds checking
+};
+struct MetaData {
+    MetaBoard board;
+    MetaLocalState local_state;
+    MetaSharedState shared_state;
+};
+
 RNDGameState::RNDGameState(const std::vector<uint8_t> &byte_data)
     : shared_state_ptr(std::make_shared<SharedStateInfo>()) {
-    std::stringstream ss;
-    ss.write(reinterpret_cast<char const *>(byte_data.data()), std::streamsize(byte_data.size()));
-    nop::Deserializer<nop::StreamReader<std::stringstream>> deserializer{std::move(ss)};
-    deserializer.Read(&local_state);
-    SharedStateInfo &info = *shared_state_ptr;
-    deserializer.Read(&info);
-    deserializer.Read(&board);
+    // Owning copy
+    auto bytes = byte_data;
+    auto deserialized = cista::deserialize<MetaData>(bytes);
+
+    // Reconstruct
+    board.zorb_hash = deserialized->board.zorb_hash;
+    board.rows = deserialized->board.rows;
+    board.cols = deserialized->board.cols;
+    board.agent_pos = deserialized->board.agent_pos;
+    board.agent_idx = deserialized->board.agent_idx;
+    board.max_steps = deserialized->board.max_steps;
+    board.gems_required = deserialized->board.gems_required;
+    board.grid = std::vector<HiddenCellType>(deserialized->board.grid.begin(), deserialized->board.grid.end());
+    board.has_updated =
+        std::vector<uint8_t>(deserialized->board.has_updated.begin(), deserialized->board.has_updated.end());
+
+    local_state.index_id_mappings = std::vector<IndexId>(deserialized->local_state.index_id_mappings.begin(),
+                                                         deserialized->local_state.index_id_mappings.end());
+    local_state.random_state = deserialized->local_state.random_state;
+    local_state.reward_signal = deserialized->local_state.reward_signal;
+    local_state.steps_remaining = deserialized->local_state.steps_remaining;
+    local_state.gems_collected = deserialized->local_state.gems_collected;
+    local_state.current_reward = deserialized->local_state.current_reward;
+    local_state.magic_wall_steps = deserialized->local_state.magic_wall_steps;
+    local_state.blob_size = deserialized->local_state.blob_size;
+    local_state.id_state = deserialized->local_state.id_state;
+    local_state.blob_swap = deserialized->local_state.blob_swap;
+    local_state.magic_active = deserialized->local_state.magic_active;
+    local_state.blob_enclosed = deserialized->local_state.blob_enclosed;
+
+    shared_state_ptr->obs_show_ids = deserialized->shared_state.obs_show_ids;
+    shared_state_ptr->magic_wall_steps = deserialized->shared_state.magic_wall_steps;
+    shared_state_ptr->blob_chance = deserialized->shared_state.blob_chance;
+    shared_state_ptr->blob_max_size = deserialized->shared_state.blob_max_size;
+    shared_state_ptr->blob_max_percentage = deserialized->shared_state.blob_max_percentage;
+    shared_state_ptr->rng_seed = deserialized->shared_state.rng_seed;
+    shared_state_ptr->game_board_str =
+        std::string(deserialized->shared_state.game_board_str.begin(), deserialized->shared_state.game_board_str.end());
+    shared_state_ptr->gravity = deserialized->shared_state.gravity;
+    shared_state_ptr->disable_explosions = deserialized->shared_state.disable_explosions;
+    shared_state_ptr->butterfly_explosion_ver = deserialized->shared_state.butterfly_explosion_ver;
+    shared_state_ptr->butterfly_move_ver = deserialized->shared_state.butterfly_move_ver;
+    shared_state_ptr->in_bounds_board = std::vector<uint8_t>(deserialized->shared_state.in_bounds_board.begin(),
+                                                             deserialized->shared_state.in_bounds_board.end());
+    shared_state_ptr->board_to_inbounds = std::vector<std::size_t>(deserialized->shared_state.board_to_inbounds.begin(),
+                                                                   deserialized->shared_state.board_to_inbounds.end());
+
     InitZrbhtTable();
 }
-
 auto RNDGameState::serialize() const -> std::vector<uint8_t> {
-    nop::Serializer<nop::StreamWriter<std::stringstream>> serializer;
-    serializer.Write(local_state);
-    const SharedStateInfo &info = *shared_state_ptr;
-    serializer.Write(info);
-    serializer.Write(board);
-    auto &ss = serializer.writer().stream();
-    // discover size of data in stream
-    ss.seekg(0, std::ios::beg);
-    auto bof = ss.tellg();
-    ss.seekg(0, std::ios::end);
-    auto stream_size = std::size_t(ss.tellg() - bof);
-    ss.seekg(0, std::ios::beg);
+    MetaBoard meta_board{.zorb_hash = board.zorb_hash,
+                         .rows = board.rows,
+                         .cols = board.cols,
+                         .agent_pos = board.agent_pos,
+                         .agent_idx = board.agent_idx,
+                         .max_steps = board.max_steps,
+                         .gems_required = board.gems_required,
+                         .grid = cista::raw::to_vec(board.grid),
+                         .has_updated = cista::raw::to_vec(board.has_updated)};
+    MetaLocalState meta_local_state{
+        .index_id_mappings = cista::raw::to_vec(local_state.index_id_mappings),
+        .random_state = local_state.random_state,
+        .reward_signal = local_state.reward_signal,
+        .steps_remaining = local_state.steps_remaining,
+        .gems_collected = local_state.gems_collected,
+        .current_reward = local_state.current_reward,
+        .magic_wall_steps = local_state.magic_wall_steps,
+        .blob_size = local_state.blob_size,
+        .id_state = local_state.id_state,
+        .blob_swap = local_state.blob_swap,
+        .magic_active = local_state.magic_active,
+        .blob_enclosed = local_state.blob_enclosed,
+    };
+    MetaSharedState meta_shared_state{
+        .obs_show_ids = shared_state_ptr->obs_show_ids,
+        .magic_wall_steps = shared_state_ptr->magic_wall_steps,
+        .blob_chance = shared_state_ptr->blob_chance,
+        .blob_max_size = shared_state_ptr->blob_max_size,
+        .blob_max_percentage = shared_state_ptr->blob_max_percentage,
+        .rng_seed = shared_state_ptr->rng_seed,
+        .game_board_str = cista::raw::string(shared_state_ptr->game_board_str),
+        .gravity = shared_state_ptr->gravity,
+        .disable_explosions = shared_state_ptr->disable_explosions,
+        .butterfly_explosion_ver = shared_state_ptr->butterfly_explosion_ver,
+        .butterfly_move_ver = shared_state_ptr->butterfly_move_ver,
+        .in_bounds_board = cista::raw::to_vec(shared_state_ptr->in_bounds_board),
+        .board_to_inbounds = cista::raw::to_vec(shared_state_ptr->board_to_inbounds),
+    };
+    MetaData meta_data{.board = std::move(meta_board),
+                       .local_state = std::move(meta_local_state),
+                       .shared_state = std::move(meta_shared_state)};
+    std::vector<uint8_t> byte_data = cista::serialize(meta_data);
 
-    // make your vector long enough
-    std::vector<uint8_t> byte_data(stream_size);
-
-    // read directly in
-    ss.read(reinterpret_cast<char *>(byte_data.data()), std::streamsize(byte_data.size()));
     return byte_data;
 }
 

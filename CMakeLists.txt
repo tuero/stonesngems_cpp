@@ -13,11 +13,10 @@ set(STONESNGEMS_SOURCES
 
 # Build library
 add_library(stonesngems STATIC ${STONESNGEMS_SOURCES})
-target_compile_features(stonesngems PUBLIC cxx_std_17)
+target_compile_features(stonesngems PUBLIC cxx_std_20)
 target_include_directories(stonesngems PUBLIC
     ${PROJECT_SOURCE_DIR}/include
 )
-target_include_directories(stonesngems SYSTEM PUBLIC ${PROJECT_SOURCE_DIR}/include/libnop/include)
 
 # Build tests
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
