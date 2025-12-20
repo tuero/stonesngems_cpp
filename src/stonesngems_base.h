@@ -1,8 +1,6 @@
 #ifndef STONESNGEMS_BASE_H_
 #define STONESNGEMS_BASE_H_
 
-#include <nop/structure.h>
-
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -114,16 +112,12 @@ struct SharedStateInfo {
     std::vector<uint8_t> in_bounds_board;               // Fast check for single-step in bounds
     std::vector<std::size_t> board_to_inbounds;         // Indexing conversion for in bounds checking
     // NOLINTEND(misc-non-private-member-variables-in-classes)
-    NOP_STRUCTURE(SharedStateInfo, obs_show_ids, magic_wall_steps, blob_chance, blob_max_size, blob_max_percentage,
-                  rng_seed, game_board_str, gravity, disable_explosions, butterfly_explosion_ver, butterfly_move_ver,
-                  in_bounds_board, board_to_inbounds);
 };
 
 // Information specific for the current game state
 struct IndexId {
     std::size_t index;
     int id;
-    NOP_STRUCTURE(IndexId, index, id);
 };
 struct LocalState {
     bool operator==(const LocalState &other) const {
@@ -146,8 +140,6 @@ struct LocalState {
     bool magic_active = false;                           // Flag if magic wall is currently active
     bool blob_enclosed = true;                           // Flag if blob is enclosed
     // NOLINTEND(misc-non-private-member-variables-in-classes)
-    NOP_STRUCTURE(LocalState, index_id_mappings, random_state, reward_signal, steps_remaining, gems_collected,
-                  current_reward, magic_wall_steps, blob_size, id_state, blob_swap, magic_active, blob_enclosed);
 };
 
 // Game state
@@ -192,7 +184,7 @@ public:
      * @return True if element is valid, false otherwise
      */
     [[nodiscard]] constexpr static auto is_valid_hidden_element(HiddenCellType element) -> bool {
-        return static_cast<int>(element) >= 0 && static_cast<int>(element) < static_cast<int>(kNumVisibleCellType);
+        return static_cast<int>(element) >= 0 && static_cast<int>(element) < static_cast<int>(kNumHiddenCellType);
     }
 
     /**

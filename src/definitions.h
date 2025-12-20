@@ -1,12 +1,11 @@
 #ifndef STONESNGEMS_DEFS_H_
 #define STONESNGEMS_DEFS_H_
 
-#include <nop/structure.h>
-
 #include <array>
 #include <cassert>
 #include <cstdint>
 #include <limits>
+#include <utility>
 #include <vector>
 
 namespace stonesngems {
@@ -262,7 +261,6 @@ struct Board {
     std::vector<HiddenCellType> grid;
     std::vector<uint8_t> has_updated;
     // NOLINTEND(misc-non-private-member-variables-in-classes)
-    NOP_STRUCTURE(Board, zorb_hash, rows, cols, agent_pos, agent_idx, max_steps, gems_required, grid, has_updated);
 };
 
 }    // namespace stonesngems
